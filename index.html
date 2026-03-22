@@ -730,6 +730,12 @@ html, body {
 
   <div id="ob-result-scroll" style="flex:1;overflow-y:auto;scrollbar-width:none;padding:0 2px 8px">
 
+<div id="soul-type-wrapper" style="display:none; text-align:center; margin:0 0 20px;">
+  <div style="font-family:'Cinzel',serif; font-size:9px; letter-spacing:.3em; color:var(--text-dim); margin-bottom:8px;">SOUL TYPE</div>
+  <div id="soul-type-en" style="font-family:'Cinzel',serif; font-size:22px; font-weight:600; color:var(--gold-soft); letter-spacing:.15em; line-height:1;"></div>
+  <div id="soul-type-ja" style="font-family:'Noto Serif JP',serif; font-size:11px; color:var(--text-dim); margin-top:5px; letter-spacing:.1em;"></div>
+</div>
+
 <!-- ① 星座 -->
 <div class="ob-result-block" id="ob-block-zodiac">
   <div class="ob-block-header">
@@ -809,6 +815,16 @@ html, body {
     <span class="ob-block-label" style="color:var(--rose)">SHADOWS · 意識したい課題</span>
   </div>
   <div id="ob-shadows-r" class="ob-block-body" style="line-height:2;font-size:12px">読み込み中…</div>
+</div>
+
+<!-- ⑦ SOUL PARAMETERS -->
+<div class="ob-result-block" id="ob-block-params" style="border-color:rgba(201,168,76,.2);background:rgba(201,168,76,.03)">
+  <div class="ob-block-header">
+    <span class="ob-block-num" style="background:rgba(201,168,76,.1);border-color:rgba(201,168,76,.3);color:var(--gold-soft)">◈</span>
+    <span class="ob-block-label" style="color:var(--gold-soft)">SOUL PARAMETERS · 魂の素質値</span>
+  </div>
+  <div id="ob-radar-chart" style="margin:12px 0 4px"></div>
+  <div style="font-size:10px;color:var(--text-dim);text-align:center;font-family:'Cormorant Garamond',serif;font-style:italic;margin-top:8px">九星気学×星座から算出した先天的な素質傾向</div>
 </div>
 
   </div><!-- /scroll -->
@@ -991,6 +1007,7 @@ html, body {
   <button class="detail-tab" onclick="switchDetailTab('zodiac',this)">西洋占星術</button>
   <button class="detail-tab" onclick="switchDetailTab('direction',this)">吉方位</button>
   <button class="detail-tab" onclick="switchDetailTab('shichusuimei',this)">四柱推命</button>
+  <button class="detail-tab" onclick="switchDetailTab('soul',this)">魂の分析</button>
 </div>
 
 <div class="scrollable">
@@ -1138,6 +1155,17 @@ html, body {
 </div>
 
   </div>
+
+  <div id="detail-soul" style="display:none">
+    <!-- ソウルタイプ -->
+    <div class="kyusei-card" style="border-color:rgba(201,168,76,.3);background:rgba(201,168,76,.04);text-align:center;padding:24px 16px 20px">
+      <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:.3em;color:var(--gold);margin-bottom:14px">SOUL TYPE</div>
+      <div id="detail-soul-en" style="font-family:'Cinzel',serif;font-size:30px;letter-spacing:.12em;color:var(--gold-soft)">—</div>
+      <div id="detail-soul-ja" style="font-size:13px;color:var(--silver);margin-top:8px;letter-spacing:.1em">—</div>
+    </div>
+    <!-- 6軸カード（JS生成） -->
+    <div id="detail-soul-cards"></div>
+  </div>
 </div>
 
   </div>
@@ -1255,6 +1283,12 @@ html, body {
 
   <div class="scrollable" style="padding:8px 16px 32px">
 
+    <div class="mp-soul-wrapper" style="display:none; text-align:center; margin:0 0 16px;">
+      <div style="font-family:'Cinzel',serif; font-size:9px; letter-spacing:.3em; color:var(--text-dim); margin-bottom:8px;">SOUL TYPE</div>
+      <div id="mp-soul-type-en" style="font-family:'Cinzel',serif; font-size:20px; font-weight:600; color:var(--gold-soft); letter-spacing:.15em; line-height:1;"></div>
+      <div id="mp-soul-type-ja" style="font-family:'Noto Serif JP',serif; font-size:11px; color:var(--text-dim); margin-top:5px; letter-spacing:.1em;"></div>
+    </div>
+
     <div class="ob-result-block">
       <div class="ob-block-header">
         <span class="ob-block-num">01</span>
@@ -1328,6 +1362,13 @@ html, body {
         <span class="ob-block-label" style="color:var(--rose)">SHADOWS · 意識したい課題</span>
       </div>
       <div id="mp-shadows" class="ob-block-body" style="line-height:2;font-size:12px">—</div>
+    </div>
+
+    <!-- SOUL PARAMETERS MyPage -->
+    <div class="card card-gold" style="margin-bottom:14px">
+      <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:.25em;color:var(--gold);margin-bottom:14px">SOUL PARAMETERS</div>
+      <div id="mp-radar-chart"></div>
+      <div style="font-size:10px;color:var(--text-dim);text-align:center;font-family:'Cormorant Garamond',serif;font-style:italic;margin-top:8px">九星気学×星座から算出した先天的な素質傾向</div>
     </div>
 
     <div class="mp-section-label" style="margin-top:8px">SETTINGS</div>
@@ -1420,7 +1461,7 @@ html, body {
 
   <div style="text-align:center;padding:28px 0 8px">
     <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:.3em;color:var(--text-dim)">KARMA STELLA</div>
-    <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Beta v0.2.0</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-top:4px">Beta v0.3.0</div>
     <div style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:12px;color:var(--text-dim);margin-top:10px;line-height:1.8">占術は統計。自分を知るための道具として。</div>
   </div>
 
@@ -1962,6 +2003,233 @@ const SC_NICHKAN_DATA = {
 };
 
 // ══════════════════════════════════════════
+// SOUL TYPE LABELS
+// ══════════════════════════════════════════
+const SOUL_TYPE_LABELS = {
+  '1-牡羊座': { en: 'SURGE',       ja: '奔流' },
+  '1-牡牛座': { en: 'DEPTH',       ja: '深淵' },
+  '1-双子座': { en: 'CURRENT',     ja: '流れ' },
+  '1-蟹座':   { en: 'TIDE',        ja: '満ち引き' },
+  '1-獅子座': { en: 'LUMINOUS',    ja: '月光' },
+  '1-乙女座': { en: 'STREAM',      ja: '清流' },
+  '1-天秤座': { en: 'FLOW',        ja: '調和流' },
+  '1-蠍座':   { en: 'ABYSS',       ja: '深海' },
+  '1-射手座': { en: 'PASSAGE',     ja: '海路' },
+  '1-山羊座': { en: 'GLACIER',     ja: '氷脈' },
+  '1-水瓶座': { en: 'DELTA',       ja: '合流点' },
+  '1-魚座':   { en: 'UNDERTOW',    ja: '底流' },
+  '2-牡羊座': { en: 'TERRA',       ja: '大地' },
+  '2-牡牛座': { en: 'BEDROCK',     ja: '岩盤' },
+  '2-双子座': { en: 'LOAM',        ja: '沃土' },
+  '2-蟹座':   { en: 'ROOT',        ja: '根' },
+  '2-獅子座': { en: 'BASTION',     ja: '砦' },
+  '2-乙女座': { en: 'SOIL',        ja: '土壌' },
+  '2-天秤座': { en: 'ANCHOR',      ja: '碇' },
+  '2-蠍座':   { en: 'MANTLE',      ja: '地核' },
+  '2-射手座': { en: 'MERIDIAN',    ja: '子午線' },
+  '2-山羊座': { en: 'STRATUM',     ja: '地層' },
+  '2-水瓶座': { en: 'FAULT',       ja: '断層' },
+  '2-魚座':   { en: 'SILT',        ja: '沖積' },
+  '3-牡羊座': { en: 'BOLT',        ja: '雷光' },
+  '3-牡牛座': { en: 'SPROUT',      ja: '芽吹き' },
+  '3-双子座': { en: 'SIGNAL',      ja: '発信' },
+  '3-蟹座':   { en: 'SPARK',       ja: '火花' },
+  '3-獅子座': { en: 'ARC',         ja: '閃弧' },
+  '3-乙女座': { en: 'CIRCUIT',     ja: '回路' },
+  '3-天秤座': { en: 'FREQUENCY',   ja: '周波' },
+  '3-蠍座':   { en: 'VOLTAGE',     ja: '電位' },
+  '3-射手座': { en: 'FLASH',       ja: '閃光' },
+  '3-山羊座': { en: 'CONDUCTOR',   ja: '導体' },
+  '3-水瓶座': { en: 'PULSE',       ja: '脈動' },
+  '3-魚座':   { en: 'STATIC',      ja: '静電' },
+  '4-牡羊座': { en: 'GALE',        ja: '疾風' },
+  '4-牡牛座': { en: 'CANOPY',      ja: '葉蓋' },
+  '4-双子座': { en: 'BREEZE',      ja: '薫風' },
+  '4-蟹座':   { en: 'VEIL',        ja: '霧衣' },
+  '4-獅子座': { en: 'CREST',       ja: '梢' },
+  '4-乙女座': { en: 'SPORE',       ja: '胞子' },
+  '4-天秤座': { en: 'DRIFT',       ja: '漂い' },
+  '4-蠍座':   { en: 'HOLLOW',      ja: '洞' },
+  '4-射手座': { en: 'ZEPHYR',      ja: '西風' },
+  '4-山羊座': { en: 'TIMBER',      ja: '材木' },
+  '4-水瓶座': { en: 'POLLEN',      ja: '花粉' },
+  '4-魚座':   { en: 'MIST',        ja: '霧' },
+  '5-牡羊座': { en: 'ORIGIN',      ja: '起点' },
+  '5-牡牛座': { en: 'GRAVITY',     ja: '引力' },
+  '5-双子座': { en: 'NEXUS',       ja: '結節' },
+  '5-蟹座':   { en: 'CORE',        ja: '核' },
+  '5-獅子座': { en: 'VORTEX',      ja: '渦' },
+  '5-乙女座': { en: 'AXIS',        ja: '軸' },
+  '5-天秤座': { en: 'PIVOT',       ja: '支点' },
+  '5-蠍座':   { en: 'SINGULARITY', ja: '特異点' },
+  '5-射手座': { en: 'VECTOR',      ja: '指向' },
+  '5-山羊座': { en: 'MASS',        ja: '質量' },
+  '5-水瓶座': { en: 'FIELD',       ja: '磁場' },
+  '5-魚座':   { en: 'WARP',        ja: '歪曲' },
+  '6-牡羊座': { en: 'APEX',        ja: '頂点' },
+  '6-牡牛座': { en: 'VAULT',       ja: '天蓋' },
+  '6-双子座': { en: 'CROWN',       ja: '冠' },
+  '6-蟹座':   { en: 'HAVEN',       ja: '聖域' },
+  '6-獅子座': { en: 'ZENITH',      ja: '天頂' },
+  '6-乙女座': { en: 'FACET',       ja: '切子面' },
+  '6-天秤座': { en: 'EQUINOX',     ja: '均衡点' },
+  '6-蠍座':   { en: 'CIPHER',      ja: '暗号' },
+  '6-射手座': { en: 'TRAJECTORY',  ja: '軌跡' },
+  '6-山羊座': { en: 'PINNACLE',    ja: '絶頂' },
+  '6-水瓶座': { en: 'PRISM',       ja: '稜鏡' },
+  '6-魚座':   { en: 'AURORA',      ja: '極光' },
+  '7-牡羊座': { en: 'FLARE',       ja: '閃耀' },
+  '7-牡牛座': { en: 'LUSTER',      ja: '光沢' },
+  '7-双子座': { en: 'RESONANCE',   ja: '共鳴' },
+  '7-蟹座':   { en: 'SHIMMER',     ja: '揺光' },
+  '7-獅子座': { en: 'LUMINARY',    ja: '光体' },
+  '7-乙女座': { en: 'CHORD',       ja: '和音' },
+  '7-天秤座': { en: 'GLEAM',       ja: '輝き' },
+  '7-蠍座':   { en: 'PATINA',      ja: '古光' },
+  '7-射手座': { en: 'SPECTRUM',    ja: '光域' },
+  '7-山羊座': { en: 'ALLOY',       ja: '合金' },
+  '7-水瓶座': { en: 'REFRACTION',  ja: '屈折光' },
+  '7-魚座':   { en: 'IRIDESCENCE', ja: '虹光' },
+  '8-牡羊座': { en: 'RIDGE',       ja: '稜線' },
+  '8-牡牛座': { en: 'MONOLITH',    ja: '一枚岩' },
+  '8-双子座': { en: 'THRESHOLD',   ja: '境界' },
+  '8-蟹座':   { en: 'CAIRN',       ja: '石積み' },
+  '8-獅子座': { en: 'SUMMIT',      ja: '頂' },
+  '8-乙女座': { en: 'STRATA',      ja: '地層' },
+  '8-天秤座': { en: 'PASS',        ja: '峠' },
+  '8-蠍座':   { en: 'OBSIDIAN',    ja: '黒曜石' },
+  '8-射手座': { en: 'ESCARP',      ja: '断崖' },
+  '8-山羊座': { en: 'BASALT',      ja: '玄武岩' },
+  '8-水瓶座': { en: 'TECTONIC',    ja: '地殻変動' },
+  '8-魚座':   { en: 'SEDIMENT',    ja: '堆積' },
+  '9-牡羊座': { en: 'CORONA',      ja: '光冠' },
+  '9-牡牛座': { en: 'EMBER',       ja: '残火' },
+  '9-双子座': { en: 'RADIANCE',    ja: '放光' },
+  '9-蟹座':   { en: 'HEARTH',      ja: '炉火' },
+  '9-獅子座': { en: 'SOLARA',      ja: '太陽核' },
+  '9-乙女座': { en: 'BEACON',      ja: '灯台' },
+  '9-天秤座': { en: 'SOLSTICE',    ja: '光の均衡' },
+  '9-蠍座':   { en: 'PYRE',        ja: '葬火' },
+  '9-射手座': { en: 'COMET',       ja: '彗星' },
+  '9-山羊座': { en: 'FORGE',       ja: '鍛冶火' },
+  '9-水瓶座': { en: 'PLASMA',      ja: '光電' },
+  '9-魚座':   { en: 'PHOSPHOR',    ja: '燐光' },
+};
+
+function getSoulTypeLabel() {
+  if (!state.honmeiSei || !state.zodiac) return null;
+  return SOUL_TYPE_LABELS[`${state.honmeiSei}-${state.zodiac.name}`] || null;
+}
+
+// ══════════════════════════════════════════
+// SOUL PARAMETERS
+// ══════════════════════════════════════════
+function calcSoulParams() {
+  if (!state.honmeiSei || !state.zodiac) return null;
+
+  const kyuseiEl = state.kData ? state.kData.element : '水'; // 木/火/土/金/水
+  const zodiacEl = state.zodiac ? state.zodiac.element : '水'; // 火/土/風/水
+
+  // 九星五行スコアテーブル（各軸への寄与）
+  // [直感力, 行動力, 持続力, 共感力, 創造力, 洞察力]
+  const kyuseiScore = {
+    '水': [90, 40, 50, 80, 60, 85],
+    '木': [60, 80, 60, 60, 85, 55],
+    '火': [55, 90, 40, 50, 80, 70],
+    '土': [45, 55, 90, 75, 45, 60],
+    '金': [65, 60, 80, 45, 50, 90],
+  };
+
+  // 星座四元素スコアテーブル
+  const zodiacScore = {
+    '水': [85, 35, 55, 90, 65, 80],
+    '火': [50, 95, 35, 45, 85, 55],
+    '土': [40, 60, 95, 70, 40, 65],
+    '風': [80, 70, 45, 65, 90, 75],
+  };
+
+  const ks = kyuseiScore[kyuseiEl] || kyuseiScore['水'];
+  const zs = zodiacScore[zodiacEl] || zodiacScore['水'];
+
+  // 加重平均（九星60% + 星座40%）し、±5のゆらぎを加える
+  const seed = state.honmeiSei * 7 + (state.zodiac.name.length * 3);
+  const labels = ['直感力', '行動力', '持続力', '共感力', '創造力', '洞察力'];
+  return labels.map((label, i) => {
+    const base = Math.round(ks[i] * 0.6 + zs[i] * 0.4);
+    const jitter = ((seed * (i + 3)) % 11) - 5; // -5〜+5の決定論的ゆらぎ
+    const val = Math.min(99, Math.max(30, base + jitter));
+    return { label, val };
+  });
+}
+
+function buildRadarSVG(params) {
+  const size = 220;
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = 82;
+  const n = params.length;
+  const angleStep = (Math.PI * 2) / n;
+  const startAngle = -Math.PI / 2;
+
+  // グリッド（3段）
+  const gridLevels = [0.33, 0.66, 1.0];
+  let gridSVG = '';
+  gridLevels.forEach((level, li) => {
+    const points = params.map((_, i) => {
+      const angle = startAngle + angleStep * i;
+      return `${cx + r * level * Math.cos(angle)},${cy + r * level * Math.sin(angle)}`;
+    }).join(' ');
+    const opacity = li === 2 ? '0.25' : '0.12';
+    gridSVG += `<polygon points="${points}" fill="none" stroke="rgba(201,168,76,${opacity})" stroke-width="1"/>`;
+  });
+
+  // 軸線
+  let axisSVG = '';
+  params.forEach((_, i) => {
+    const angle = startAngle + angleStep * i;
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    axisSVG += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="rgba(201,168,76,0.15)" stroke-width="1"/>`;
+  });
+
+  // データポリゴン
+  const dataPoints = params.map((p, i) => {
+    const angle = startAngle + angleStep * i;
+    const ratio = p.val / 100;
+    return `${cx + r * ratio * Math.cos(angle)},${cy + r * ratio * Math.sin(angle)}`;
+  }).join(' ');
+  const polyFill = `<polygon points="${dataPoints}" fill="rgba(201,168,76,0.15)" stroke="rgba(201,168,76,0.8)" stroke-width="1.5"/>`;
+
+  // 頂点ドット
+  let dotsSVG = '';
+  params.forEach((p, i) => {
+    const angle = startAngle + angleStep * i;
+    const ratio = p.val / 100;
+    const x = cx + r * ratio * Math.cos(angle);
+    const y = cy + r * ratio * Math.sin(angle);
+    dotsSVG += `<circle cx="${x}" cy="${y}" r="3" fill="var(--gold-soft)" opacity="0.9"/>`;
+  });
+
+  // ラベル
+  let labelsSVG = '';
+  const labelR = r + 22;
+  params.forEach((p, i) => {
+    const angle = startAngle + angleStep * i;
+    const lx = cx + labelR * Math.cos(angle);
+    const ly = cy + labelR * Math.sin(angle);
+    const anchor = lx < cx - 5 ? 'end' : lx > cx + 5 ? 'start' : 'middle';
+    labelsSVG += `
+      <text x="${lx}" y="${ly - 5}" text-anchor="${anchor}" font-family="'Cinzel',serif" font-size="8" fill="rgba(200,200,232,0.7)" letter-spacing="0.05em">${p.label}</text>
+      <text x="${lx}" y="${ly + 8}" text-anchor="${anchor}" font-family="'Cinzel',serif" font-size="10" fill="var(--gold-soft)" font-weight="600">${p.val}</text>
+    `;
+  });
+
+  return `<svg viewBox="0 0 ${size} ${size}" width="100%" style="max-width:240px;display:block;margin:0 auto">
+    ${gridSVG}${axisSVG}${polyFill}${dotsSVG}${labelsSVG}
+  </svg>`;
+}
+
+// ══════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════
 const state = {
@@ -2200,6 +2468,15 @@ function calcAndStart() {
 
   fillResultScreen();
 
+  // SOUL TYPE バッジ挿入
+  const soulLabel = getSoulTypeLabel();
+  const soulWrapper = document.getElementById('soul-type-wrapper');
+  if (soulWrapper && soulLabel) {
+    document.getElementById('soul-type-en').textContent = soulLabel.en;
+    document.getElementById('soul-type-ja').textContent = soulLabel.ja;
+    soulWrapper.style.display = '';
+  }
+
   // 卵演出を経由してから鑑定結果スライドへ
   const overlay = document.getElementById('egg-overlay');
   overlay.style.display = 'flex';
@@ -2326,6 +2603,13 @@ function fillResultScreen() {
 
   // ⑥ 弱み
   document.getElementById('ob-shadows-r').innerHTML = k.shadows.map(s=>`<div style="display:flex;gap:8px;margin-bottom:6px"><span style="color:var(--rose);flex-shrink:0">▸</span><span>${s}</span></div>`).join('');
+
+  // SOUL PARAMETERS レーダーチャート描画
+  const params = calcSoulParams();
+  const radarEl = document.getElementById('ob-radar-chart');
+  if (radarEl && params) {
+    radarEl.innerHTML = buildRadarSVG(params);
+  }
 
   // スクロールリセット
   const scr = document.getElementById('ob-result-scroll');
@@ -2535,6 +2819,15 @@ function updateMypage() {
   const ms = state.meishiki;
   if (!k || !z) return;
 
+  // SOUL TYPE バッジ
+  const soulLabel = getSoulTypeLabel();
+  const mpSoulWrapper = document.querySelector('.mp-soul-wrapper');
+  if (mpSoulWrapper && soulLabel) {
+    document.getElementById('mp-soul-type-en').textContent = soulLabel.en;
+    document.getElementById('mp-soul-type-ja').textContent = soulLabel.ja;
+    mpSoulWrapper.style.display = '';
+  }
+
   // ヘッダー
   document.getElementById('mp-result-title').textContent = `${z.name} ${z.symbol} × ${k.name}`;
   document.getElementById('mp-result-sub').textContent = ms ? `${ms.nichkan}日（${SC_KAN_READING[ms.nichkan]}）` : '';
@@ -2594,6 +2887,13 @@ function updateMypage() {
   document.getElementById('mp-zodiac').textContent = `${z.name} ${z.symbol}`;
   document.getElementById('mp-tsuki').textContent = KYUUSEI[state.tsukiMeiSei]?.name || '';
   document.getElementById('mp-lineage').textContent = k.lineage;
+
+  // MyPage SOUL PARAMETERS
+  const mpParams = calcSoulParams();
+  const mpRadarEl = document.getElementById('mp-radar-chart');
+  if (mpRadarEl && mpParams) {
+    mpRadarEl.innerHTML = buildRadarSVG(mpParams);
+  }
 }
 
 // ══════════════════════════════════════════
@@ -2879,10 +3179,43 @@ function resetDirDate() {
 function switchDetailTab(tab, btn) {
   document.querySelectorAll('.detail-tab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
-  ['kyusei','zodiac','direction','shichusuimei'].forEach(t=>{
+  ['kyusei','zodiac','direction','shichusuimei','soul'].forEach(t=>{
     document.getElementById('detail-'+t).style.display = t===tab?'block':'none';
   });
   if(tab === 'direction') updateDirectionTab();
+  if(tab === 'soul') renderSoulAnalysis();
+}
+
+function renderSoulAnalysis() {
+  const label = getSoulTypeLabel();
+  const enEl = document.getElementById('detail-soul-en');
+  const jaEl = document.getElementById('detail-soul-ja');
+  const cardsEl = document.getElementById('detail-soul-cards');
+  if (!enEl || !jaEl || !cardsEl) return;
+  if (label) {
+    enEl.textContent = label.en;
+    jaEl.textContent = label.ja;
+  }
+  const key = (state.honmeiSei && state.zodiac) ? `${state.honmeiSei}-${state.zodiac.name}` : null;
+  const desc = (key && typeof SOUL_DESCRIPTIONS !== 'undefined') ? SOUL_DESCRIPTIONS[key] : null;
+  if (!desc) {
+    cardsEl.innerHTML = '<div style="color:var(--text-dim);text-align:center;padding:32px 16px;font-size:13px">データが見つかりません</div>';
+    return;
+  }
+  const axes = [
+    { key: 'essence',  label: 'ESSENCE',  ja: '本質',     color: 'rgba(201,168,76,1)',  border: 'rgba(201,168,76,.25)',  bg: 'rgba(201,168,76,.04)' },
+    { key: 'relation', label: 'RELATION', ja: '対人',     color: 'rgba(168,85,247,1)',  border: 'rgba(168,85,247,.25)',  bg: 'rgba(168,85,247,.04)' },
+    { key: 'work',     label: 'WORK',     ja: '仕事',     color: 'rgba(78,205,196,1)',  border: 'rgba(78,205,196,.25)',  bg: 'rgba(78,205,196,.04)' },
+    { key: 'decision', label: 'DECISION', ja: '意思決定', color: 'rgba(232,121,160,1)', border: 'rgba(232,121,160,.25)', bg: 'rgba(232,121,160,.04)' },
+    { key: 'stress',   label: 'STRESS',   ja: 'ストレス', color: 'rgba(200,200,232,1)', border: 'rgba(200,200,232,.2)',  bg: 'rgba(200,200,232,.03)' },
+    { key: 'growth',   label: 'GROWTH',   ja: '成長',     color: 'rgba(91,141,239,1)',  border: 'rgba(91,141,239,.25)',  bg: 'rgba(91,141,239,.04)' },
+  ];
+  cardsEl.innerHTML = axes.map(ax => `
+    <div class="kyusei-card" style="border-color:${ax.border};background:${ax.bg}">
+      <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:.2em;color:${ax.color};margin-bottom:10px">${ax.label} — ${ax.ja}</div>
+      <div style="font-size:13px;color:var(--silver);line-height:1.8">${desc[ax.key] || '—'}</div>
+    </div>
+  `).join('');
 }
 
 // ══════════════════════════════════════════
@@ -3799,14 +4132,17 @@ function buildShareText() {
   const k = state.kData;
   const z = state.zodiac;
   const m = state.meishiki;
-  // meishikiの正しい構造: { nichkan, nenchuu, getchuu, nicchuu, gogyou }
   const nichkan = m ? `${m.nichkan}（${SC_KAN_READING[m.nichkan] || ''}）` : '';
-  return `✨ KARMA STELLA 鑑定結果\n\n` +
-    `⭐ ${k.name}\n` +
-    `${z.name} ${z.symbol}\n` +
-    (nichkan ? `日干：${nichkan}\n` : '') +
+  const soul = getSoulTypeLabel();
+  const soulEn = soul ? soul.en : '';
+  const soulJa = soul ? soul.ja : '';
+  return `✨ KARMA STELLA\n\n` +
+    (soulEn ? `— ${soulEn} —\n${soulJa}\n\n` : '') +
+    `${k.name} × ${z.name}${z.symbol}\n` +
+    (nichkan ? `日干 ${nichkan}\n` : '') +
     `\n${k.strengths ? k.strengths[0] : ''}\n\n` +
-    `#KARMASTELLA #九星気学 #星座占い`;
+    `あなたのSOUL TYPEは？\nhttps://kiyo819-coder.github.io/KarmaStella/\n\n` +
+    `#KARMASTELLA #${soulEn} #九星気学`;
 }
 
 function shareToX() {
@@ -3859,6 +4195,7 @@ if(!loadFromLocalStorage()) {
   document.getElementById('screen-onboarding').classList.add('active');
 }
 </script>
+<script src="soul_descriptions.js"></script>
 
 </body>
 </html>
