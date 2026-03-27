@@ -3474,14 +3474,21 @@ function closeConfirm() {
   document.getElementById('confirm-overlay').classList.remove('open');
 }
 
-function executeReset() {
+async function executeReset() {
   closeConfirm();
+
   const keysToRemove = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (key && key.startsWith('ks_')) keysToRemove.push(key);
   }
   keysToRemove.forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
+
+  if ('caches' in window) {
+    const keys = await caches.keys();
+    await Promise.all(keys.map(k => caches.delete(k)));
+  }
+
   state.birth = null;
   state.honmeiSei = 1;
   state.tsukiMeiSei = 2;
@@ -3491,6 +3498,10 @@ function executeReset() {
   state.moonPhase = null;
   state.isCusp = false;
   state.meishiki = null;
+
+  const charImg = document.getElementById('home-char-img');
+  if (charImg) { charImg.src = ''; charImg.style.cssText = ''; }
+
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('bottom-nav').classList.remove('visible');
   document.getElementById('screen-onboarding').classList.add('active');
