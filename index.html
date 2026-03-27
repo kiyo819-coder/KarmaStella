@@ -3476,7 +3476,21 @@ function closeConfirm() {
 
 function executeReset() {
   closeConfirm();
-  try { localStorage.removeItem('ks_birth'); } catch(e) {}
+  const keysToRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('ks_')) keysToRemove.push(key);
+  }
+  keysToRemove.forEach(k => { try { localStorage.removeItem(k); } catch(e) {} });
+  state.birth = null;
+  state.honmeiSei = 1;
+  state.tsukiMeiSei = 2;
+  state.keishaSei = 3;
+  state.kData = null;
+  state.zodiac = null;
+  state.moonPhase = null;
+  state.isCusp = false;
+  state.meishiki = null;
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('bottom-nav').classList.remove('visible');
   document.getElementById('screen-onboarding').classList.add('active');
