@@ -2746,7 +2746,7 @@ function updateHome() {
   const gogyo = HOME_GOGYO[String(state.honmeiSei)] || 'earth';
   const fx = HOME_GOGYO_FX[gogyo];
   const soul = SOUL_TYPE_LABELS[`${state.honmeiSei}-${state.zodiac.name}`] || {en:'', ja:''};
-  document.getElementById('home-char-img').src = './images/' + charKey + '.png';
+  document.getElementById('home-char-img').src = './images/' + charKey + '.png?v=20260510';
   document.getElementById('home-char-img').style.cssText =
     `animation:float ${fx.floatDur} ease-in-out infinite;filter:drop-shadow(0 0 16px ${starColor}99) drop-shadow(0 0 32px ${starColor}55);`;
   document.getElementById('home-aura').style.cssText =
