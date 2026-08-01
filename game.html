@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>KARMA STELLA — 縦スクロールシューター</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --void: #04040F;
+      --gold: #C9A84C;
+      --violet: #A855F7;
+      --silver: #C8C8E8;
+      --moonlight: #F0E6FF;
+      --text-dim: #8888AA;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: var(--void);
+      color: var(--moonlight);
+      font-family: 'Noto Serif JP', serif;
+      overflow: hidden;
+      touch-action: none;
+    }
+    #app {
+      width: 100%;
+      max-width: 390px;
+      height: 100vh;
+      margin: 0 auto;
+      background: var(--void);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .screen {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+    .screen.active { display: flex; }
+
+    #screen-select {
+      background: radial-gradient(ellipse at 50% 20%, #1a0a3d 0%, var(--void) 60%);
+      padding: 20px 16px;
+      overflow-y: auto;
+      justify-content: flex-start;
+    }
+    .select-title {
+      font-family: 'Cinzel', serif;
+      font-size: 16px;
+      color: var(--gold);
+      text-align: center;
+      letter-spacing: 0.1em;
+      margin-bottom: 20px;
+      margin-top: 10px;
+    }
+    .char-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .char-card {
+      aspect-ratio: 1;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(201, 168, 76, 0.3);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+      padding: 8px;
+      position: relative;
+    }
+    .char-card:hover {
+      border-color: var(--gold);
+      box-shadow: 0 0 15px rgba(201, 168, 76, 0.2);
+      transform: translateY(-2px);
+    }
+    .char-sprite-canvas {
+      width: 50px;
+      height: 50px;
+      image-rendering: pixelated;
+    }
+    .char-name {
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      color: var(--gold);
+      letter-spacing: 0.08em;
+      text-align: center;
+    }
+    .char-rank {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: rgba(168, 85, 247, 0.8);
+      color: var(--gold);
+      font-family: 'Cinzel', serif;
+      font-size: 8px;
+      padding: 2px 4px;
+      border-radius: 3px;
+      letter-spacing: 0.05em;
+    }
+
+    #screen-game {
+      background: var(--void);
+      position: relative;
+    }
+    #parallax-canvas, #game-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    #parallax-canvas { z-index: 1; }
+    #game-canvas { z-index: 2; }
+
+    #hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'Cinzel', serif;
+      font-size: 11px;
+      color: var(--gold);
+      letter-spacing: 0.08em;
+      pointer-events: none;
+    }
+    .hud-stat { display: flex; gap: 8px; }
+    .hud-label { color: var(--text-dim); }
+
+    .power-level-display {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .power-text {
+      font-weight: 600;
+      min-width: 30px;
+    }
+    .power-gauge {
+      width: 80px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .power-gauge-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--violet), var(--gold));
+      border-radius: 2px;
+      transition: width 0.2s;
+    }
+
+    #special-gauge-bar {
+      position: absolute;
+      bottom: 20px;
+      left: 16px;
+      right: 16px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+      z-index: 10;
+    }
+    #special-gauge-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--violet), #FF69B4);
+      border-radius: 3px;
+      transition: width 0.2s;
+    }
+    #special-btn {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(168, 85, 247, 0.2);
+      border: 2px solid var(--violet);
+      color: var(--violet);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      display: none;
+      z-index: 10;
+      transition: all 0.2s;
+    }
+    #special-btn.ready {
+      display: block;
+      animation: special-pulse 0.6s ease-in-out infinite;
+    }
+    @keyframes special-pulse {
+      0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; }
+      50% { transform: translateX(-50%) scale(1.05); opacity: 0.8; }
+    }
+
+    #task-popup {
+      position: absolute;
+      bottom: 80px;
+      left: 16px;
+      right: 16px;
+      background: rgba(123, 47, 190, 0.15);
+      border: 1px solid rgba(168, 85, 247, 0.5);
+      border-radius: 12px;
+      padding: 12px;
+      z-index: 20;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: auto;
+    }
+    #task-popup.visible { display: flex; }
+    .task-label {
+      font-family: 'Cinzel', serif;
+      font-size: 9px;
+      color: var(--violet);
+      letter-spacing: 0.1em;
+    }
+    .task-text {
+      font-size: 12px;
+      color: var(--silver);
+      line-height: 1.5;
+    }
+    #task-btn {
+      background: linear-gradient(135deg, rgba(201, 168, 76, 0.3), rgba(201, 168, 76, 0.1));
+      border: 1px solid rgba(201, 168, 76, 0.5);
+      color: var(--gold);
+      padding: 8px;
+      border-radius: 8px;
+      font-family: 'Cinzel', serif;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+    }
+
+    #screen-gameover {
+      background: radial-gradient(ellipse at 50% 30%, #2d1b69 0%, var(--void) 100%);
+      justify-content: center;
+      align-items: center;
+      padding: 32px 24px;
+      text-align: center;
+    }
+    .gameover-title {
+      font-family: 'Cinzel', serif;
+      font-size: 32px;
+      color: var(--violet);
+      letter-spacing: 0.1em;
+      margin-bottom: 16px;
+    }
+    .gameover-subtitle {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 14px;
+      color: var(--silver);
+      margin-bottom: 24px;
+      line-height: 1.8;
+    }
+    .gameover-stats {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(201, 168, 76, 0.2);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--moonlight);
+      margin-bottom: 8px;
+    }
+    .stat-label { color: var(--text-dim); }
+    .stat-value { color: var(--gold); font-weight: 600; }
+
+    .rank-progress {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(201, 168, 76, 0.2);
+    }
+    .rank-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+    .rank-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--violet), var(--gold));
+      border-radius: 4px;
+    }
+
+    .gameover-btn {
+      background: linear-gradient(135deg, var(--violet), #7B2FBE);
+      border: none;
+      color: white;
+      padding: 14px 32px;
+      border-radius: 10px;
+      font-family: 'Cinzel', serif;
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .gameover-btn:hover { transform: translateY(-2px); }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="screen-select" class="screen active">
+    <div class="select-title">キャラクターを選ぶ</div>
+    <div class="char-grid" id="char-grid"></div>
+  </div>
+
+  <div id="screen-game" class="screen">
+    <canvas id="parallax-canvas"></canvas>
+    <canvas id="game-canvas"></canvas>
+    <div id="hud">
+      <div class="hud-stat">
+        <span class="hud-label">LEVEL</span>
+        <span id="level-val">1</span>
+      </div>
+      <div class="power-level-display">
+        <span class="hud-label">POW</span>
+        <span class="power-text" id="power-val">LV.1</span>
+        <div class="power-gauge">
+          <div class="power-gauge-fill" id="power-gauge-fill"></div>
+        </div>
+      </div>
+      <div class="hud-stat">
+        <span class="hud-label">KARMA</span>
+        <span id="karma-val">0</span>
+      </div>
+    </div>
+    <div id="special-gauge-bar">
+      <div id="special-gauge-fill"></div>
+    </div>
+    <button id="special-btn">✦ PURGE</button>
+    <div id="task-popup">
+      <div class="task-label">カルマタスク</div>
+      <div class="task-text" id="task-text"></div>
+      <button id="task-btn">完了する</button>
+    </div>
+  </div>
+
+  <div id="screen-gameover" class="screen">
+    <div class="gameover-title">輪廻転生</div>
+    <div class="gameover-subtitle" id="gameover-message">あなたの魂は、新しい星へ向かう</div>
+    <div class="gameover-stats">
+      <div class="stat-row">
+        <span class="stat-label">獲得カルマ</span>
+        <span class="stat-value" id="final-karma">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">宿業ポイント</span>
+        <span class="stat-value" id="final-shukugo">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">到達レベル</span>
+        <span class="stat-value" id="final-level">1</span>
+      </div>
+      <div class="rank-progress">
+        <div style="text-align: center; font-size: 11px; color: var(--text-dim); margin-bottom: 4px;">転生ランク: <span id="final-rank-display">1</span></div>
+        <div class="rank-bar">
+          <div class="rank-bar-fill" id="final-rank-bar"></div>
+        </div>
+      </div>
+    </div>
+    <button class="gameover-btn" onclick="location.reload()">もう一度</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// CHARACTER DEFINITIONS WITH PIXEL ART
+// ══════════════════════════════════════════════════════════════════════════════
+
+const CHARACTERS = [
+  {
+    name: 'AQUA',
+    color: '#4ECDC4',
+    element: 'water',
+    sprite: [
+      [0,0,1,1,0,0],
+      [0,1,1,1,1,0],
+      [1,1,1,1,1,1],
+      [1,1,1,1,1,1],
+      [0,1,1,1,1,0],
+      [0,0,1,1,0,0]
+    ]
+  },
+  {
+    name: 'IGNIS',
+    color: '#FF6B5B',
+    element: 'fire',
+    sprite: [
+      [0,0,1,1,0,0],
+      [0,1,1,1,1,0],
+      [1,1,1,1,1,1],
+      [1,1,1,1,1,1],
+      [0,1,1,1,1,0],
+      [0,0,1,1,0,0]
+    ]
+  },
+  {
+    name: 'VENTO',
+    color: '#A8D8EA',
+    element: 'air',
+    sprite: [
+      [0,1,0,0,1,0],
+      [1,1,1,0,1,1],
+      [0,1,1,1,1,0],
+      [0,1,1,1,1,0],
+      [1,1,1,0,1,1],
+      [0,1,0,0,1,0]
+    ]
+  },
+  {
+    name: 'TERRA',
+    color: '#7DB87D',
+    element: 'earth',
+    sprite: [
+      [0,0,1,0,0,0],
+      [0,1,1,1,0,0],
+      [1,1,1,1,1,0],
+      [1,1,1,1,1,0],
+      [0,1,1,1,0,0],
+      [0,0,1,0,0,0]
+    ]
+  },
+  {
+    name: 'SOL',
+    color: '#FFD700',
+    element: 'light',
+    sprite: [
+      [0,1,1,1,1,0],
+      [1,1,1,1,1,1],
+      [1,1,1,1,1,1],
+      [1,1,1,1,1,1],
+      [1,1,1,1,1,1],
+      [0,1,1,1,1,0]
+    ]
+  },
+  {
+    name: 'ANIMA',
+    color: '#B19CD9',
+    element: 'spirit',
+    sprite: [
+      [0,0,1,1,1,0],
+      [0,1,1,1,1,1],
+      [1,1,1,1,1,1],
+      [1,1,1,1,1,1],
+      [0,1,1,1,1,1],
+      [0,0,1,1,1,0]
+    ]
+  },
+  {
+    name: 'ARMONIA',
+    color: '#DDA0DD',
+    element: 'balance',
+    sprite: [
+      [0,1,1,1,1,0],
+      [1,1,1,1,1,1],
+      [0,1,1,1,1,0],
+      [0,1,1,1,1,0],
+      [1,1,1,1,1,1],
+      [0,1,1,1,1,0]
+    ]
+  },
+  {
+    name: 'OMBRA',
+    color: '#2F4F4F',
+    element: 'shadow',
+    sprite: [
+      [0,1,1,1,1,0],
+      [1,1,1,1,1,1],
+      [1,1,0,1,1,1],
+      [1,1,0,1,1,1],
+      [1,1,1,1,1,1],
+      [0,1,1,1,1,0]
+    ]
+  },
+  {
+    name: 'SAETA',
+    color: '#FF8C00',
+    element: 'energy',
+    sprite: [
+      [0,0,1,1,0,0],
+      [0,1,1,1,1,0],
+      [1,1,1,1,1,1],
+      [0,1,1,1,1,0],
+      [0,0,1,1,0,0],
+      [0,0,1,1,0,0]
+    ]
+  },
+  {
+    name: 'AETHER',
+    color: '#87CEEB',
+    element: 'cosmos',
+    sprite: [
+      [0,1,1,1,1,0],
+      [1,1,0,0,1,1],
+      [1,0,1,1,0,1],
+      [1,0,1,1,0,1],
+      [1,1,0,0,1,1],
+      [0,1,1,1,1,0]
+    ]
+  },
+  {
+    name: 'KRONOS',
+    color: '#9370DB',
+    element: 'time',
+    sprite: [
+      [0,1,1,1,1,0],
+      [1,1,0,0,1,1],
+      [1,0,1,1,0,1],
+      [1,0,1,1,0,1],
+      [1,1,0,0,1,1],
+      [0,1,1,1,1,0]
+    ]
+  },
+  {
+    name: 'LUNA',
+    color: '#F0E6FF',
+    element: 'moon',
+    sprite: [
+      [0,1,1,1,1,0],
+      [1,1,1,1,0,0],
+      [1,1,1,0,0,0],
+      [1,1,1,0,0,0],
+      [1,1,1,1,0,0],
+      [0,1,1,1,1,0]
+    ]
+  }
+];
+
+const KARMA_TASKS = [
+  { text: '深呼吸する', easy: true },
+  { text: '感謝する', easy: true },
+  { text: '笑顔になる', easy: true },
+  { text: '誰かを褒める', easy: true },
+  { text: '前を向く', easy: true }
+];
+
+const REINCARNATION_RANKS = [
+  { rank: 1, threshold: 0, label: 'R1', effects: [] },
+  { rank: 2, threshold: 50, label: 'R2', effects: ['aura'] },
+  { rank: 3, threshold: 120, label: 'R3', effects: ['aura', 'particles'] },
+  { rank: 4, threshold: 250, label: 'R4', effects: ['aura', 'particles-x2'] },
+  { rank: 5, threshold: 450, label: 'R5', effects: ['aura', 'particles-x2', 'golden-ring'] },
+  { rank: 6, threshold: 700, label: 'R6', effects: ['aura', 'particles-x2', 'golden-ring', 'afterimage'] },
+  { rank: 7, threshold: 1000, label: 'R7', effects: ['double-ring', 'afterimage'] },
+  { rank: 8, threshold: 1500, label: 'R8', effects: ['rainbow-shimmer', 'star-particles'] },
+  { rank: 9, threshold: 2200, label: 'R9', effects: ['rainbow', 'orbits'] },
+  { rank: 10, threshold: 3000, label: 'R10', effects: ['full-radiance'] }
+];
+
+let gameState = {
+  screen: 'select',
+  selected: null,
+  level: 1,
+  hp: 5,
+  karma: 0,
+  specialGauge: 0,
+  powerLevel: 1,
+  enemiesKilled: 0,
+  nextTaskKarma: 60,
+  shukugo: 0,
+  reincarnationRank: 1,
+  charIndex: 0
+};
+
+let gameObjects = {
+  player: null,
+  bullets: [],
+  enemies: [],
+  particles: [],
+  boss: null,
+  drones: []
+};
+
+function loadShukugo() {
+  try {
+    const stored = localStorage.getItem('karma_shukugo');
+    return stored ? parseInt(stored, 10) : 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+function saveShukugo(value) {
+  try {
+    localStorage.setItem('karma_shukugo', value.toString());
+  } catch (e) {}
+}
+
+gameState.shukugo = loadShukugo();
+gameState.reincarnationRank = REINCARNATION_RANKS.findIndex(r => gameState.shukugo >= r.threshold) + 1;
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CHARACTER SELECT & SPRITE RENDERING
+// ══════════════════════════════════════════════════════════════════════════════
+
+function drawPixelSprite(ctx, sprite, x, y, color, scale = 4) {
+  const [h, w] = [sprite.length, sprite[0].length];
+  sprite.forEach((row, i) => {
+    row.forEach((pixel, j) => {
+      if (pixel) {
+        ctx.fillStyle = color;
+        ctx.fillRect(x + j * scale, y + i * scale, scale, scale);
+      }
+    });
+  });
+}
+
+function initCharacterSelect() {
+  const grid = document.getElementById('char-grid');
+  grid.innerHTML = '';
+  CHARACTERS.forEach((char, i) => {
+    const card = document.createElement('div');
+    card.className = 'char-card';
+
+    const canvas = document.createElement('canvas');
+    canvas.className = 'char-sprite-canvas';
+    canvas.width = 50;
+    canvas.height = 50;
+
+    const ctx = canvas.getContext('2d');
+    drawPixelSprite(ctx, char.sprite, 17, 17, char.color, 3);
+
+    const rankInfo = REINCARNATION_RANKS.find(r => r.rank === gameState.reincarnationRank);
+
+    card.innerHTML = `<div class="char-rank">${rankInfo.label}</div>`;
+    card.appendChild(canvas);
+
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'char-name';
+    nameDiv.textContent = char.name;
+    card.appendChild(nameDiv);
+
+    card.addEventListener('click', () => startGame(i));
+    grid.appendChild(card);
+  });
+}
+
+function startGame(charIndex) {
+  gameState.selected = CHARACTERS[charIndex];
+  gameState.charIndex = charIndex;
+  gameState.screen = 'game';
+  gameState.level = 1;
+  gameState.hp = 5;
+  gameState.karma = 0;
+  gameState.specialGauge = 0;
+  gameState.powerLevel = 1;
+  gameState.enemiesKilled = 0;
+  gameState.nextTaskKarma = 60;
+
+  gameObjects = {
+    player: null,
+    bullets: [],
+    enemies: [],
+    particles: [],
+    boss: null,
+    drones: []
+  };
+
+  switchScreen('game');
+  initGame();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// GAME SETUP
+// ══════════════════════════════════════════════════════════════════════════════
+
+const gameCanvas = document.getElementById('game-canvas');
+const parallaxCanvas = document.getElementById('parallax-canvas');
+const gameCtx = gameCanvas.getContext('2d');
+const parallaxCtx = parallaxCanvas.getContext('2d');
+
+const WIDTH = 390;
+const HEIGHT = 844;
+
+gameCanvas.width = WIDTH;
+gameCanvas.height = HEIGHT;
+parallaxCanvas.width = WIDTH;
+parallaxCanvas.height = HEIGHT;
+
+function initGame() {
+  gameObjects.player = new Player(WIDTH / 2, HEIGHT - 80, gameState.selected);
+  gameObjects.enemies = [];
+  gameObjects.bullets = [];
+  gameObjects.particles = [];
+  gameObjects.boss = null;
+  gameObjects.drones = [];
+
+  initParallaxStars();
+  updateHUD();
+  gameLoop();
+}
+
+let lastTime = 0;
+function gameLoop(now = 0) {
+  const dt = Math.min((now - lastTime) / 1000, 0.016);
+  lastTime = now;
+
+  update(dt);
+  draw();
+
+  requestAnimationFrame(gameLoop);
+}
+
+function update(dt) {
+  gameObjects.player.update(dt);
+
+  gameObjects.bullets = gameObjects.bullets.filter(b => {
+    b.update(dt);
+    return b.y > 0 && b.y < HEIGHT;
+  });
+
+  gameObjects.enemies = gameObjects.enemies.filter(e => {
+    e.update(dt);
+
+    gameObjects.bullets = gameObjects.bullets.filter(b => {
+      if (checkCollision(b, e)) {
+        if (b.piercing > 0) {
+          b.piercing--;
+          e.takeDamage(10);
+          return true;
+        } else {
+          e.takeDamage(10);
+          gameState.karma += 1;
+          createParticles(b.x, b.y, 5, '#FFD700');
+          return false;
+        }
+      }
+      return true;
+    });
+
+    if (!gameObjects.player.invincible && checkCollision(gameObjects.player, e)) {
+      gameObjects.player.takeDamage(1);
+      gameObjects.player.invincible = true;
+      gameObjects.player.invincibleTimer = 2;
+      createParticles(gameObjects.player.x, gameObjects.player.y, 10, gameState.selected.color);
+    }
+
+    return e.hp > 0;
+  });
+
+  gameObjects.drones.forEach(d => d.update(dt));
+
+  if (gameObjects.boss) {
+    gameObjects.boss.update(dt);
+
+    gameObjects.bullets = gameObjects.bullets.filter(b => {
+      if (checkCollision(b, gameObjects.boss)) {
+        gameObjects.boss.takeDamage(5);
+        gameState.karma += 5;
+        createParticles(b.x, b.y, 8, '#FF69B4');
+        return false;
+      }
+      return true;
+    });
+
+    if (checkCollision(gameObjects.player, gameObjects.boss) && !gameObjects.player.invincible) {
+      gameObjects.player.takeDamage(2);
+      gameObjects.player.invincible = true;
+      gameObjects.player.invincibleTimer = 2;
+    }
+
+    if (gameObjects.boss.hp <= 0) {
+      createParticles(gameObjects.boss.x, gameObjects.boss.y, 20, '#C9A84C');
+      gameState.karma += 50;
+      gameObjects.boss = null;
+    }
+  }
+
+  gameObjects.particles = gameObjects.particles.filter(p => {
+    p.update(dt);
+    return p.life > 0;
+  });
+
+  if (Math.random() < 0.02 * gameState.level && gameObjects.enemies.length < 10 + gameState.level * 2) {
+    spawnRandomEnemy();
+  }
+
+  if (!gameObjects.boss && gameState.karma >= 200 && Math.random() < 0.005) {
+    gameObjects.boss = new BossDarkSovereign(WIDTH / 2, 60);
+    gameState.karma -= 200;
+  }
+
+  if (gameState.karma >= gameState.nextTaskKarma) {
+    showKarmaTask();
+    gameState.nextTaskKarma += gameState.nextTaskKarma === 60 ? 100 : 100;
+  }
+
+  gameState.level = Math.floor(gameState.karma / 100) + 1;
+
+  if (gameState.hp <= 0) {
+    endGame();
+  }
+
+  updateHUD();
+}
+
+function draw() {
+  drawParallax();
+
+  gameCtx.fillStyle = 'rgba(4, 4, 15, 0.1)';
+  gameCtx.fillRect(0, 0, WIDTH, HEIGHT);
+
+  gameObjects.enemies.forEach(e => e.draw(gameCtx));
+  gameObjects.boss?.draw(gameCtx);
+  gameObjects.bullets.forEach(b => b.draw(gameCtx));
+  gameObjects.drones.forEach(d => d.draw(gameCtx));
+  gameObjects.player.draw(gameCtx);
+  gameObjects.particles.forEach(p => p.draw(gameCtx));
+
+  if (gameObjects.boss) {
+    const barWidth = 150;
+    const barHeight = 4;
+    const x = WIDTH / 2 - barWidth / 2;
+    const y = 40;
+    gameCtx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    gameCtx.fillRect(x, y, barWidth, barHeight);
+    const hpPercent = gameObjects.boss.hp / gameObjects.boss.maxHp;
+    gameCtx.fillStyle = hpPercent > 0.5 ? '#FFD700' : '#FF1493';
+    gameCtx.fillRect(x, y, barWidth * Math.max(0, hpPercent), barHeight);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PARALLAX BACKGROUND
+// ══════════════════════════════════════════════════════════════════════════════
+
+let parallaxStars = { slow: [], mid: [], fast: [], shootingStars: [] };
+let parallaxOffset = 0;
+
+function initParallaxStars() {
+  parallaxStars = { slow: [], mid: [], fast: [], shootingStars: [] };
+
+  for (let i = 0; i < 20; i++) {
+    parallaxStars.slow.push({ x: Math.random() * WIDTH, y: Math.random() * HEIGHT, size: Math.random() * 1.5 });
+  }
+  for (let i = 0; i < 40; i++) {
+    parallaxStars.mid.push({ x: Math.random() * WIDTH, y: Math.random() * HEIGHT, size: Math.random() * 1 });
+  }
+  for (let i = 0; i < 60; i++) {
+    parallaxStars.fast.push({ x: Math.random() * WIDTH, y: Math.random() * HEIGHT, size: Math.random() * 0.5 });
+  }
+}
+
+function drawParallax() {
+  parallaxCtx.clearRect(0, 0, WIDTH, HEIGHT);
+
+  parallaxOffset = (parallaxOffset + 2) % HEIGHT;
+
+  drawStarLayer(parallaxStars.slow, 0.2);
+  drawStarLayer(parallaxStars.mid, 0.5);
+  drawStarLayer(parallaxStars.fast, 1);
+
+  if (Math.random() < 0.001) {
+    parallaxStars.shootingStars.push({
+      x: Math.random() * WIDTH,
+      y: -20,
+      vx: (Math.random() - 0.5) * 100,
+      vy: Math.random() * 150 + 100,
+      life: 1,
+      maxLife: 1
+    });
+  }
+
+  parallaxStars.shootingStars = parallaxStars.shootingStars.filter(s => {
+    s.y += s.vy * 0.016;
+    s.x += s.vx * 0.016;
+    s.life -= 0.016;
+
+    if (s.y < HEIGHT && s.x > 0 && s.x < WIDTH) {
+      parallaxCtx.strokeStyle = `rgba(255, 255, 255, ${s.life})`;
+      parallaxCtx.lineWidth = 1;
+      parallaxCtx.beginPath();
+      parallaxCtx.moveTo(s.x, s.y);
+      parallaxCtx.lineTo(s.x - s.vx * 0.1, s.y - s.vy * 0.1);
+      parallaxCtx.stroke();
+    }
+    return s.life > 0 && s.y < HEIGHT;
+  });
+}
+
+function drawStarLayer(stars, speed) {
+  parallaxCtx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+  stars.forEach(s => {
+    const y = (s.y + parallaxOffset * speed) % HEIGHT;
+    parallaxCtx.fillRect(s.x, y, s.size, s.size);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PLAYER WITH REINCARNATION EFFECTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+class Player {
+  constructor(x, y, charData) {
+    this.x = x;
+    this.y = y;
+    this.charData = charData;
+    this.radius = 16;
+    this.invincible = false;
+    this.invincibleTimer = 0;
+    this.lastShotTime = 0;
+    this.touchX = null;
+    this.animFrame = 0;
+    this.animTimer = 0;
+    this.afterimageTrail = [];
+  }
+
+  update(dt) {
+    if (this.invincible) {
+      this.invincibleTimer -= dt;
+      if (this.invincibleTimer <= 0) {
+        this.invincible = false;
+      }
+    }
+
+    if (this.touchX !== null) {
+      this.x = this.touchX;
+    }
+    this.x = Math.max(this.radius, Math.min(WIDTH - this.radius, this.x));
+    this.y = Math.max(this.radius, Math.min(HEIGHT - this.radius, this.y));
+
+    this.animTimer += dt;
+    if (this.animTimer > 0.5) {
+      this.animFrame = 1 - this.animFrame;
+      this.animTimer = 0;
+    }
+
+    const rankEffects = REINCARNATION_RANKS[gameState.reincarnationRank - 1].effects;
+    if (rankEffects.includes('afterimage')) {
+      this.afterimageTrail.push({ x: this.x, y: this.y, life: 0.3 });
+    }
+    this.afterimageTrail = this.afterimageTrail.filter(t => {
+      t.life -= dt;
+      return t.life > 0;
+    });
+
+    this.lastShotTime += dt;
+    const baseFireRate = 0.15;
+    const levelBonus = gameState.powerLevel > 5 ? (gameState.powerLevel - 5) * 0.02 : 0;
+    const fireRate = (baseFireRate - levelBonus) / Math.max(1, Math.sqrt(gameState.powerLevel / 5));
+
+    if (this.lastShotTime >= fireRate) {
+      this.shoot();
+      this.lastShotTime = 0;
+    }
+  }
+
+  shoot() {
+    let bulletCount = 1;
+    if (gameState.powerLevel <= 5) {
+      bulletCount = gameState.powerLevel;
+    } else {
+      bulletCount = 5;
+    }
+
+    const spread = bulletCount > 1 ? 15 : 0;
+    const piercing = gameState.powerLevel > 10 ? (gameState.powerLevel - 10) : 0;
+    const bulletSize = gameState.powerLevel > 10 ? 1.2 : 1;
+
+    for (let i = 0; i < bulletCount; i++) {
+      const angle = i * (spread * 2 / Math.max(1, bulletCount - 1)) - spread;
+      gameObjects.bullets.push(new Bullet(
+        this.x,
+        this.y - this.radius,
+        0,
+        -400 - gameState.powerLevel * 50,
+        angle,
+        piercing,
+        bulletSize
+      ));
+    }
+
+    gameObjects.drones.forEach(d => d.shoot());
+  }
+
+  takeDamage(amount) {
+    gameState.hp -= amount;
+  }
+
+  draw(ctx) {
+    const rankEffects = REINCARNATION_RANKS[gameState.reincarnationRank - 1].effects;
+
+    if (rankEffects.includes('afterimage')) {
+      this.afterimageTrail.forEach(t => {
+        ctx.globalAlpha = t.life * 0.3;
+        drawPixelSprite(ctx, this.charData.sprite, this.x - 12, this.y - 12, this.charData.color, 3);
+        ctx.globalAlpha = 1;
+      });
+    }
+
+    if (rankEffects.includes('aura')) {
+      ctx.fillStyle = this.charData.color.replace(')', ', 0.3)').replace('rgb', 'rgba');
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius + 8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    if (rankEffects.includes('golden-ring')) {
+      ctx.strokeStyle = '#FFD700';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius + 12, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    if (rankEffects.includes('double-ring')) {
+      ctx.strokeStyle = '#FFD700';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius + 12, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.strokeStyle = this.charData.color;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius + 18, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    if (rankEffects.includes('particles') || rankEffects.includes('particles-x2')) {
+      const count = rankEffects.includes('particles-x2') ? 2 : 1;
+      for (let i = 0; i < count; i++) {
+        const angle = (Date.now() / 1000 + i) % (Math.PI * 2);
+        const px = this.x + Math.cos(angle) * (this.radius + 10);
+        const py = this.y + Math.sin(angle) * (this.radius + 10);
+        ctx.fillStyle = this.charData.color.replace(')', ', 0.6)').replace('rgb', 'rgba');
+        ctx.beginPath();
+        ctx.arc(px, py, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    if (rankEffects.includes('orbits')) {
+      for (let i = 0; i < 2; i++) {
+        const angle = (Date.now() / 2000 + i * Math.PI) % (Math.PI * 2);
+        const px = this.x + Math.cos(angle) * 30;
+        const py = this.y + Math.sin(angle) * 30;
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.arc(px, py, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    if (rankEffects.includes('full-radiance')) {
+      ctx.fillStyle = 'rgba(255, 215, 0, 0.1)';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius + 25, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const px = this.x + Math.cos(angle) * 35;
+        const py = this.y + Math.sin(angle) * 35;
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.arc(px, py, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    if (this.invincible && Math.sin(Date.now() / 100) > 0) return;
+
+    drawPixelSprite(ctx, this.charData.sprite, this.x - 12, this.y - 12, this.charData.color, 3);
+
+    ctx.strokeStyle = this.invincible ? this.charData.color : '#C9A84C';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BULLET WITH PIERCING
+// ══════════════════════════════════════════════════════════════════════════════
+
+class Bullet {
+  constructor(x, y, vx, vy, angle = 0, piercing = 0, size = 1) {
+    this.x = x;
+    this.y = y;
+    const speed = Math.sqrt(vx * vx + vy * vy);
+    const rad = angle * Math.PI / 180;
+    this.vx = Math.cos(rad) * speed;
+    this.vy = vy;
+    this.radius = 4 * size;
+    this.piercing = piercing;
+  }
+
+  update(dt) {
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+  }
+
+  draw(ctx) {
+    ctx.fillStyle = '#FFD700';
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// OPTION DRONES (LV16-20)
+// ══════════════════════════════════════════════════════════════════════════════
+
+class OptionDrone {
+  constructor(player, offset = 1) {
+    this.player = player;
+    this.offset = offset;
+    this.x = player.x;
+    this.y = player.y;
+    this.lastShotTime = 0;
+  }
+
+  update(dt) {
+    const angle = (offset * Math.PI) + (Date.now() / 3000) % (Math.PI * 2);
+    this.x = this.player.x + Math.cos(angle) * 40;
+    this.y = this.player.y + Math.sin(angle) * 40;
+
+    this.lastShotTime += dt;
+    if (this.lastShotTime > 0.2) {
+      this.shoot();
+      this.lastShotTime = 0;
+    }
+  }
+
+  shoot() {
+    gameObjects.bullets.push(new Bullet(
+      this.x,
+      this.y,
+      0,
+      -300,
+      0,
+      0,
+      0.8
+    ));
+  }
+
+  draw(ctx) {
+    ctx.fillStyle = gameState.selected.color;
+    ctx.globalAlpha = 0.6;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ENEMIES
+// ══════════════════════════════════════════════════════════════════════════════
+
+class Enemy {
+  constructor(x, y, type = 'straight') {
+    this.x = x;
+    this.y = y;
+    this.type = type;
+    this.radius = 10;
+    this.hp = 20;
+    this.color = '#FF6B9D';
+    this.vx = 0;
+    this.vy = 100;
+  }
+
+  update(dt) {
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+
+    if (this.y > HEIGHT + 20) this.hp = 0;
+  }
+
+  takeDamage(amount) {
+    this.hp -= amount;
+    if (this.hp <= 0) {
+      gameState.specialGauge = Math.min(100, gameState.specialGauge + 8);
+      gameState.enemiesKilled++;
+      createParticles(this.x, this.y, 8, this.color);
+    }
+  }
+
+  draw(ctx) {
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+class EnemyStraight extends Enemy {
+  constructor(x, y) {
+    super(x, y, 'straight');
+    this.color = '#FF6B9D';
+  }
+}
+
+class EnemyZigzag extends Enemy {
+  constructor(x, y) {
+    super(x, y, 'zigzag');
+    this.color = '#FF9E64';
+    this.wobbleTimer = 0;
+  }
+
+  update(dt) {
+    this.wobbleTimer += dt;
+    this.vx = Math.sin(this.wobbleTimer * 3) * 80;
+    super.update(dt);
+  }
+}
+
+class EnemyRush extends Enemy {
+  constructor(x, y) {
+    super(x, y, 'rush');
+    this.color = '#E879A0';
+    this.hp = 30;
+  }
+
+  update(dt) {
+    const dx = gameObjects.player.x - this.x;
+    const dy = gameObjects.player.y - this.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 0) {
+      this.vx = (dx / dist) * 150;
+      this.vy = (dy / dist) * 150;
+    }
+    super.update(dt);
+  }
+}
+
+class EnemyTank extends Enemy {
+  constructor(x, y) {
+    super(x, y, 'tank');
+    this.color = '#8B5CF6';
+    this.hp = 60;
+    this.radius = 14;
+  }
+}
+
+class EnemySwarm extends Enemy {
+  constructor(x, y) {
+    super(x, y, 'swarm');
+    this.color = '#4ECDC4';
+    this.hp = 10;
+    this.radius = 6;
+    this.spawnTimer = 3;
+  }
+
+  update(dt) {
+    this.spawnTimer -= dt;
+    if (this.spawnTimer <= 0 && Math.random() < 0.3) {
+      gameObjects.enemies.push(new EnemyStraight(
+        this.x + (Math.random() - 0.5) * 40,
+        this.y + (Math.random() - 0.5) * 40
+      ));
+      this.spawnTimer = 2;
+    }
+    super.update(dt);
+  }
+}
+
+function spawnRandomEnemy() {
+  const x = Math.random() * (WIDTH - 40) + 20;
+  const y = -20;
+  const types = [
+    EnemyStraight,
+    EnemyZigzag,
+    EnemyRush,
+    gameState.level > 5 ? EnemyTank : EnemyStraight,
+    gameState.level > 8 ? EnemySwarm : EnemyStraight
+  ];
+  const Type = types[Math.floor(Math.random() * types.length)];
+  gameObjects.enemies.push(new Type(x, y));
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BOSS: DARK SOVEREIGN
+// ══════════════════════════════════════════════════════════════════════════════
+
+class BossDarkSovereign {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.radius = 30;
+    const scaleFactor = 1 + (gameState.powerLevel - 1) * 0.15;
+    this.maxHp = 300 * scaleFactor;
+    this.hp = 300 * scaleFactor;
+    this.shootTimer = 0;
+    this.sineTimer = 0;
+  }
+
+  update(dt) {
+    this.sineTimer += dt;
+    this.x = WIDTH / 2 + Math.sin(this.sineTimer * 2) * 80;
+    this.y = Math.min(150, this.y + 30 * dt);
+
+    this.shootTimer += dt;
+    if (this.shootTimer > 0.5) {
+      this.shoot();
+      this.shootTimer = 0;
+    }
+  }
+
+  shoot() {
+    const dx = gameObjects.player.x - this.x;
+    const dy = gameObjects.player.y - this.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist > 0) {
+      const angle = Math.atan2(dy, dx);
+      gameObjects.bullets.push(new BossBullet(this.x, this.y, angle));
+    }
+
+    if (this.hp < this.maxHp / 2) {
+      for (let i = 0; i < 3; i++) {
+        const angle = (Math.PI * 2 / 3) * i + Math.PI / 2;
+        gameObjects.bullets.push(new BossBullet(this.x, this.y, angle));
+      }
+    }
+  }
+
+  takeDamage(amount) {
+    this.hp -= amount;
+  }
+
+  draw(ctx) {
+    ctx.fillStyle = '#8B4789';
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = '#FF69B4';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '30px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('👑', this.x, this.y);
+  }
+}
+
+class BossBullet {
+  constructor(x, y, angle) {
+    this.x = x;
+    this.y = y;
+    this.vx = Math.cos(angle) * 200;
+    this.vy = Math.sin(angle) * 200;
+    this.radius = 5;
+  }
+
+  update(dt) {
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+  }
+
+  draw(ctx) {
+    ctx.fillStyle = '#FF1493';
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PARTICLES
+// ══════════════════════════════════════════════════════════════════════════════
+
+class Particle {
+  constructor(x, y, vx, vy, color, life = 0.5) {
+    this.x = x;
+    this.y = y;
+    this.vx = vx;
+    this.vy = vy;
+    this.color = color;
+    this.life = life;
+    this.maxLife = life;
+    this.radius = 2;
+  }
+
+  update(dt) {
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+    this.vy += 200 * dt;
+    this.life -= dt;
+  }
+
+  draw(ctx) {
+    const alpha = this.life / this.maxLife;
+    ctx.fillStyle = this.color.replace(')', `, ${alpha})`).replace('rgb', 'rgba');
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function createParticles(x, y, count, color) {
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count;
+    const speed = 100 + Math.random() * 100;
+    gameObjects.particles.push(new Particle(
+      x, y,
+      Math.cos(angle) * speed,
+      Math.sin(angle) * speed,
+      color
+    ));
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// COLLISION & HELPERS
+// ══════════════════════════════════════════════════════════════════════════════
+
+function checkCollision(a, b) {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  return dist < a.radius + b.radius;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// KARMA TASK SYSTEM
+// ══════════════════════════════════════════════════════════════════════════════
+
+function showKarmaTask() {
+  const task = KARMA_TASKS[Math.floor(Math.random() * KARMA_TASKS.length)];
+  document.getElementById('task-text').textContent = task.text;
+  document.getElementById('task-popup').classList.add('visible');
+
+  document.getElementById('task-btn').onclick = () => {
+    completeKarmaTask();
+  };
+}
+
+function completeKarmaTask() {
+  document.getElementById('task-popup').classList.remove('visible');
+  gameState.powerLevel = Math.min(20, gameState.powerLevel + 1);
+
+  if (gameState.powerLevel >= 16 && gameObjects.drones.length < 2) {
+    gameObjects.drones.push(new OptionDrone(gameObjects.player, gameObjects.drones.length));
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SPECIAL PURGE
+// ══════════════════════════════════════════════════════════════════════════════
+
+document.getElementById('special-btn').addEventListener('click', () => {
+  if (gameState.specialGauge >= 100) {
+    activatePurge();
+  }
+});
+
+function activatePurge() {
+  gameState.specialGauge = 0;
+
+  gameObjects.enemies.forEach(e => {
+    createParticles(e.x, e.y, 15, '#FFD700');
+  });
+  gameObjects.enemies = [];
+
+  if (gameObjects.boss) {
+    gameObjects.boss.takeDamage(150);
+    createParticles(gameObjects.boss.x, gameObjects.boss.y, 30, '#FFD700');
+  }
+
+  updateHUD();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// HUD & UI
+// ══════════════════════════════════════════════════════════════════════════════
+
+function updateHUD() {
+  document.getElementById('level-val').textContent = gameState.level;
+  document.getElementById('karma-val').textContent = gameState.karma;
+
+  document.getElementById('power-val').textContent = `LV.${gameState.powerLevel}`;
+  const powerPercent = ((gameState.powerLevel - 1) / 19) * 100;
+  document.getElementById('power-gauge-fill').style.width = powerPercent + '%';
+
+  const fillPercent = gameState.specialGauge;
+  document.getElementById('special-gauge-fill').style.width = fillPercent + '%';
+
+  const btn = document.getElementById('special-btn');
+  if (gameState.specialGauge >= 100) {
+    btn.classList.add('ready');
+  } else {
+    btn.classList.remove('ready');
+  }
+}
+
+function switchScreen(screenName) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + screenName).classList.add('active');
+}
+
+function endGame() {
+  gameState.screen = 'gameover';
+
+  const karmaGained = gameState.karma;
+  const shukugoGained = Math.floor(karmaGained * 0.2);
+  gameState.shukugo += shukugoGained;
+  saveShukugo(gameState.shukugo);
+
+  gameState.reincarnationRank = REINCARNATION_RANKS.findIndex(r => gameState.shukugo >= r.threshold) + 1;
+
+  document.getElementById('final-karma').textContent = karmaGained;
+  document.getElementById('final-shukugo').textContent = shukugoGained;
+  document.getElementById('final-level').textContent = gameState.level;
+  document.getElementById('final-rank-display').textContent = gameState.reincarnationRank;
+
+  const nextThreshold = REINCARNATION_RANKS[Math.min(gameState.reincarnationRank, 9)].threshold;
+  const prevThreshold = REINCARNATION_RANKS[Math.max(0, gameState.reincarnationRank - 2)].threshold;
+  const rankProgress = (gameState.shukugo - prevThreshold) / (nextThreshold - prevThreshold);
+  document.getElementById('final-rank-bar').style.width = (rankProgress * 100) + '%';
+
+  const messages = [
+    'あなたの魂は、新しい星へ向かう',
+    '次の転生を待ちながら',
+    '光の中へ帰っていく'
+  ];
+  const msg = messages[Math.floor(Math.random() * messages.length)];
+  document.getElementById('gameover-message').textContent = msg;
+
+  switchScreen('gameover');
+  cancelAnimationFrame(gameLoop);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TOUCH INPUT
+// ══════════════════════════════════════════════════════════════════════════════
+
+document.addEventListener('touchmove', (e) => {
+  if (gameState.screen === 'game' && gameObjects.player) {
+    const rect = gameCanvas.getBoundingClientRect();
+    gameObjects.player.touchX = e.touches[0].clientX - rect.left;
+  }
+}, { passive: false });
+
+document.addEventListener('touchend', () => {
+  if (gameObjects.player) {
+    gameObjects.player.touchX = null;
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════════════════
+
+initCharacterSelect();
+</script>
+</body>
+</html>
