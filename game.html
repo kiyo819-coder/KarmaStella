@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>KARMA STELLA — 縦スクロールシューター</title>
+  <title>KARMA STELLA — KARMA SHOOTER</title>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -86,9 +86,10 @@
       transform: translateY(-2px);
     }
     .char-sprite-canvas {
-      width: 50px;
-      height: 50px;
+      width: 96px;
+      height: 96px;
       image-rendering: pixelated;
+      image-rendering: crisp-edges;
     }
     .char-name {
       font-family: 'Cinzel', serif;
@@ -114,13 +115,15 @@
       background: var(--void);
       position: relative;
     }
-    #parallax-canvas, #game-canvas {
+    #parallax-canvas, #game-canvas, #ui-canvas {
       position: absolute;
       top: 0;
       left: 0;
+      image-rendering: pixelated;
     }
     #parallax-canvas { z-index: 1; }
     #game-canvas { z-index: 2; }
+    #ui-canvas { z-index: 3; pointer-events: none; }
 
     #hud {
       position: absolute;
@@ -321,6 +324,16 @@
       transition: all 0.3s;
     }
     .gameover-btn:hover { transform: translateY(-2px); }
+
+    @keyframes screen-shake {
+      0%, 100% { transform: translate(0, 0); }
+      25% { transform: translate(-2px, 0); }
+      50% { transform: translate(2px, 0); }
+      75% { transform: translate(-2px, 0); }
+    }
+    .screen-shake {
+      animation: screen-shake 0.1s linear;
+    }
   </style>
 </head>
 <body>
@@ -333,6 +346,7 @@
   <div id="screen-game" class="screen">
     <canvas id="parallax-canvas"></canvas>
     <canvas id="game-canvas"></canvas>
+    <canvas id="ui-canvas"></canvas>
     <div id="hud">
       <div class="hud-stat">
         <span class="hud-label">LEVEL</span>
@@ -390,166 +404,202 @@
 
 <script>
 // ══════════════════════════════════════════════════════════════════════════════
-// CHARACTER DEFINITIONS WITH PIXEL ART
+// 32x32 PIXEL ART SPRITES
 // ══════════════════════════════════════════════════════════════════════════════
 
 const CHARACTERS = [
   {
     name: 'AQUA',
     color: '#4ECDC4',
+    colors: ['#4ECDC4', '#2A9D8F', '#7FDDDD', '#000000'],
     element: 'water',
     sprite: [
-      [0,0,1,1,0,0],
-      [0,1,1,1,1,0],
-      [1,1,1,1,1,1],
-      [1,1,1,1,1,1],
-      [0,1,1,1,1,0],
-      [0,0,1,1,0,0]
+      [0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,2,2,1,1,1,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,2,2,1,1,1,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     ]
   },
   {
     name: 'IGNIS',
     color: '#FF6B5B',
+    colors: ['#FF6B5B', '#E63946', '#FFB703', '#000000'],
     element: 'fire',
     sprite: [
-      [0,0,1,1,0,0],
-      [0,1,1,1,1,0],
-      [1,1,1,1,1,1],
-      [1,1,1,1,1,1],
-      [0,1,1,1,1,0],
-      [0,0,1,1,0,0]
+      [0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,1,1,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,2,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,2,2,2,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,2,2,3,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     ]
   },
   {
     name: 'VENTO',
     color: '#A8D8EA',
+    colors: ['#A8D8EA', '#5BA3B8', '#E8F4F8', '#000000'],
     element: 'air',
     sprite: [
-      [0,1,0,0,1,0],
-      [1,1,1,0,1,1],
-      [0,1,1,1,1,0],
-      [0,1,1,1,1,0],
-      [1,1,1,0,1,1],
-      [0,1,0,0,1,0]
+      [0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,1,1,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,2,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,2,2,2,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     ]
   },
   {
     name: 'TERRA',
     color: '#7DB87D',
+    colors: ['#7DB87D', '#5A8D5A', '#A8D8A8', '#000000'],
     element: 'earth',
     sprite: [
-      [0,0,1,0,0,0],
-      [0,1,1,1,0,0],
-      [1,1,1,1,1,0],
-      [1,1,1,1,1,0],
-      [0,1,1,1,0,0],
-      [0,0,1,0,0,0]
+      [0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     ]
   },
   {
     name: 'SOL',
     color: '#FFD700',
+    colors: ['#FFD700', '#FFA500', '#FFFF99', '#000000'],
     element: 'light',
     sprite: [
-      [0,1,1,1,1,0],
-      [1,1,1,1,1,1],
-      [1,1,1,1,1,1],
-      [1,1,1,1,1,1],
-      [1,1,1,1,1,1],
-      [0,1,1,1,1,0]
+      [0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,1,1,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,2,3,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,2,2,3,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,2,2,3,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,2,3,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,1,1,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     ]
   },
   {
     name: 'ANIMA',
     color: '#B19CD9',
+    colors: ['#B19CD9', '#9370DB', '#E6D5F0', '#000000'],
     element: 'spirit',
     sprite: [
-      [0,0,1,1,1,0],
-      [0,1,1,1,1,1],
-      [1,1,1,1,1,1],
-      [1,1,1,1,1,1],
-      [0,1,1,1,1,1],
-      [0,0,1,1,1,0]
+      [0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,2,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,2,2,2,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     ]
   },
   {
     name: 'ARMONIA',
     color: '#DDA0DD',
+    colors: ['#DDA0DD', '#BA55D3', '#F0E6FF', '#000000'],
     element: 'balance',
     sprite: [
-      [0,1,1,1,1,0],
-      [1,1,1,1,1,1],
-      [0,1,1,1,1,0],
-      [0,1,1,1,1,0],
-      [1,1,1,1,1,1],
-      [0,1,1,1,1,0]
+      [0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,1,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,2,1,1,1,1,1,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     ]
   },
   {
     name: 'OMBRA',
     color: '#2F4F4F',
+    colors: ['#2F4F4F', '#1C1C1C', '#5F6F6F', '#000000'],
     element: 'shadow',
     sprite: [
-      [0,1,1,1,1,0],
-      [1,1,1,1,1,1],
-      [1,1,0,1,1,1],
-      [1,1,0,1,1,1],
-      [1,1,1,1,1,1],
-      [0,1,1,1,1,0]
+      [0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,2,2,1,1,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     ]
   },
   {
     name: 'SAETA',
     color: '#FF8C00',
+    colors: ['#FF8C00', '#E67E22', '#FFB84D', '#000000'],
     element: 'energy',
     sprite: [
-      [0,0,1,1,0,0],
-      [0,1,1,1,1,0],
-      [1,1,1,1,1,1],
-      [0,1,1,1,1,0],
-      [0,0,1,1,0,0],
-      [0,0,1,1,0,0]
+      [0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,1,1,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,2,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     ]
   },
   {
     name: 'AETHER',
     color: '#87CEEB',
+    colors: ['#87CEEB', '#4A90E2', '#E0F7FF', '#000000'],
     element: 'cosmos',
     sprite: [
-      [0,1,1,1,1,0],
-      [1,1,0,0,1,1],
-      [1,0,1,1,0,1],
-      [1,0,1,1,0,1],
-      [1,1,0,0,1,1],
-      [0,1,1,1,1,0]
+      [0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,1,1,2,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,2,1,1,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     ]
   },
   {
     name: 'KRONOS',
     color: '#9370DB',
+    colors: ['#9370DB', '#7850A3', '#C8B6E2', '#000000'],
     element: 'time',
     sprite: [
-      [0,1,1,1,1,0],
-      [1,1,0,0,1,1],
-      [1,0,1,1,0,1],
-      [1,0,1,1,0,1],
-      [1,1,0,0,1,1],
-      [0,1,1,1,1,0]
+      [0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,2,1,1,2,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     ]
   },
   {
     name: 'LUNA',
     color: '#F0E6FF',
+    colors: ['#F0E6FF', '#E6D5F0', '#FFFFFF', '#000000'],
     element: 'moon',
     sprite: [
-      [0,1,1,1,1,0],
-      [1,1,1,1,0,0],
-      [1,1,1,0,0,0],
-      [1,1,1,0,0,0],
-      [1,1,1,1,0,0],
-      [0,1,1,1,1,0]
+      [0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,2,2,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,2,2,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [1,1,2,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+      [0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
     ]
-  }
+  },
 ];
 
 const KARMA_TASKS = [
@@ -585,7 +635,11 @@ let gameState = {
   nextTaskKarma: 60,
   shukugo: 0,
   reincarnationRank: 1,
-  charIndex: 0
+  charIndex: 0,
+  pointerX: 0,
+  pointerY: 0,
+  isMouseDown: false,
+  screenShakeTime: 0
 };
 
 let gameObjects = {
@@ -594,7 +648,8 @@ let gameObjects = {
   enemies: [],
   particles: [],
   boss: null,
-  drones: []
+  drones: [],
+  karmaOrbs: []
 };
 
 function loadShukugo() {
@@ -616,19 +671,21 @@ gameState.shukugo = loadShukugo();
 gameState.reincarnationRank = REINCARNATION_RANKS.findIndex(r => gameState.shukugo >= r.threshold) + 1;
 
 // ══════════════════════════════════════════════════════════════════════════════
-// CHARACTER SELECT & SPRITE RENDERING
+// SPRITE RENDERING (32x32)
 // ══════════════════════════════════════════════════════════════════════════════
 
-function drawPixelSprite(ctx, sprite, x, y, color, scale = 4) {
-  const [h, w] = [sprite.length, sprite[0].length];
+function drawPixelSprite(ctx, sprite, x, y, colors, scale = 3) {
+  ctx.imageSmoothingEnabled = false;
+  const [h, w] = [sprite.length, Math.max(...sprite.map(r => r.length))];
   sprite.forEach((row, i) => {
     row.forEach((pixel, j) => {
-      if (pixel) {
-        ctx.fillStyle = color;
+      if (pixel > 0) {
+        ctx.fillStyle = colors[pixel - 1] || '#FFFFFF';
         ctx.fillRect(x + j * scale, y + i * scale, scale, scale);
       }
     });
   });
+  ctx.imageSmoothingEnabled = true;
 }
 
 function initCharacterSelect() {
@@ -640,11 +697,12 @@ function initCharacterSelect() {
 
     const canvas = document.createElement('canvas');
     canvas.className = 'char-sprite-canvas';
-    canvas.width = 50;
-    canvas.height = 50;
+    canvas.width = 96;
+    canvas.height = 96;
 
     const ctx = canvas.getContext('2d');
-    drawPixelSprite(ctx, char.sprite, 17, 17, char.color, 3);
+    ctx.imageSmoothingEnabled = false;
+    drawPixelSprite(ctx, char.sprite, 32, 32, char.colors, 3);
 
     const rankInfo = REINCARNATION_RANKS.find(r => r.rank === gameState.reincarnationRank);
 
@@ -679,7 +737,8 @@ function startGame(charIndex) {
     enemies: [],
     particles: [],
     boss: null,
-    drones: []
+    drones: [],
+    karmaOrbs: []
   };
 
   switchScreen('game');
@@ -692,8 +751,10 @@ function startGame(charIndex) {
 
 const gameCanvas = document.getElementById('game-canvas');
 const parallaxCanvas = document.getElementById('parallax-canvas');
+const uiCanvas = document.getElementById('ui-canvas');
 const gameCtx = gameCanvas.getContext('2d');
 const parallaxCtx = parallaxCanvas.getContext('2d');
+const uiCtx = uiCanvas.getContext('2d');
 
 const WIDTH = 390;
 const HEIGHT = 844;
@@ -702,6 +763,11 @@ gameCanvas.width = WIDTH;
 gameCanvas.height = HEIGHT;
 parallaxCanvas.width = WIDTH;
 parallaxCanvas.height = HEIGHT;
+uiCanvas.width = WIDTH;
+uiCanvas.height = HEIGHT;
+
+gameCtx.imageSmoothingEnabled = false;
+parallaxCtx.imageSmoothingEnabled = false;
 
 function initGame() {
   gameObjects.player = new Player(WIDTH / 2, HEIGHT - 80, gameState.selected);
@@ -710,6 +776,7 @@ function initGame() {
   gameObjects.particles = [];
   gameObjects.boss = null;
   gameObjects.drones = [];
+  gameObjects.karmaOrbs = [];
 
   initParallaxStars();
   updateHUD();
@@ -747,7 +814,7 @@ function update(dt) {
         } else {
           e.takeDamage(10);
           gameState.karma += 1;
-          createParticles(b.x, b.y, 5, '#FFD700');
+          createKarmaOrb(b.x, b.y);
           return false;
         }
       }
@@ -758,10 +825,22 @@ function update(dt) {
       gameObjects.player.takeDamage(1);
       gameObjects.player.invincible = true;
       gameObjects.player.invincibleTimer = 2;
-      createParticles(gameObjects.player.x, gameObjects.player.y, 10, gameState.selected.color);
+      triggerScreenShake(100);
+      createParticles(gameObjects.player.x, gameObjects.player.y, 15, gameState.selected.color);
     }
 
     return e.hp > 0;
+  });
+
+  gameObjects.karmaOrbs = gameObjects.karmaOrbs.filter(o => {
+    o.update(dt);
+    if (checkCollision(o, gameObjects.player)) {
+      gameState.karma += 1;
+      gameState.specialGauge = Math.min(100, gameState.specialGauge + 5);
+      createParticles(o.x, o.y, 8, '#FFD700');
+      return false;
+    }
+    return o.life > 0;
   });
 
   gameObjects.drones.forEach(d => d.update(dt));
@@ -786,7 +865,7 @@ function update(dt) {
     }
 
     if (gameObjects.boss.hp <= 0) {
-      createParticles(gameObjects.boss.x, gameObjects.boss.y, 20, '#C9A84C');
+      createParticles(gameObjects.boss.x, gameObjects.boss.y, 25, '#C9A84C');
       gameState.karma += 50;
       gameObjects.boss = null;
     }
@@ -803,6 +882,7 @@ function update(dt) {
 
   if (!gameObjects.boss && gameState.karma >= 200 && Math.random() < 0.005) {
     gameObjects.boss = new BossDarkSovereign(WIDTH / 2, 60);
+    triggerBossEntrance();
     gameState.karma -= 200;
   }
 
@@ -817,21 +897,34 @@ function update(dt) {
     endGame();
   }
 
+  gameState.screenShakeTime = Math.max(0, gameState.screenShakeTime - dt);
   updateHUD();
 }
 
 function draw() {
   drawParallax();
 
-  gameCtx.fillStyle = 'rgba(4, 4, 15, 0.1)';
+  gameCtx.fillStyle = 'rgba(4, 4, 15, 0.15)';
   gameCtx.fillRect(0, 0, WIDTH, HEIGHT);
+
+  let offsetX = 0, offsetY = 0;
+  if (gameState.screenShakeTime > 0) {
+    offsetX = (Math.random() - 0.5) * 4;
+    offsetY = (Math.random() - 0.5) * 4;
+  }
+
+  gameCtx.save();
+  gameCtx.translate(offsetX, offsetY);
 
   gameObjects.enemies.forEach(e => e.draw(gameCtx));
   gameObjects.boss?.draw(gameCtx);
+  gameObjects.karmaOrbs.forEach(o => o.draw(gameCtx));
   gameObjects.bullets.forEach(b => b.draw(gameCtx));
   gameObjects.drones.forEach(d => d.draw(gameCtx));
   gameObjects.player.draw(gameCtx);
   gameObjects.particles.forEach(p => p.draw(gameCtx));
+
+  gameCtx.restore();
 
   if (gameObjects.boss) {
     const barWidth = 150;
@@ -844,14 +937,17 @@ function draw() {
     gameCtx.fillStyle = hpPercent > 0.5 ? '#FFD700' : '#FF1493';
     gameCtx.fillRect(x, y, barWidth * Math.max(0, hpPercent), barHeight);
   }
+
+  uiCtx.clearRect(0, 0, WIDTH, HEIGHT);
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// PARALLAX BACKGROUND
+// PARALLAX WITH NEBULA GRADIENT
 // ══════════════════════════════════════════════════════════════════════════════
 
 let parallaxStars = { slow: [], mid: [], fast: [], shootingStars: [] };
 let parallaxOffset = 0;
+let nebulaCycle = 0;
 
 function initParallaxStars() {
   parallaxStars = { slow: [], mid: [], fast: [], shootingStars: [] };
@@ -869,6 +965,16 @@ function initParallaxStars() {
 
 function drawParallax() {
   parallaxCtx.clearRect(0, 0, WIDTH, HEIGHT);
+
+  nebulaCycle += 0.5;
+  const grad1 = parallaxCtx.createLinearGradient(0, 0, WIDTH, HEIGHT);
+  const hue = (nebulaCycle % 360);
+  grad1.addColorStop(0, `hsla(${hue}, 80%, 20%, 0.4)`);
+  grad1.addColorStop(0.5, `hsla(${(hue + 120) % 360}, 70%, 15%, 0.3)`);
+  grad1.addColorStop(1, `hsla(${(hue + 240) % 360}, 75%, 18%, 0.4)`);
+
+  parallaxCtx.fillStyle = grad1;
+  parallaxCtx.fillRect(0, 0, WIDTH, HEIGHT);
 
   parallaxOffset = (parallaxOffset + 2) % HEIGHT;
 
@@ -913,7 +1019,7 @@ function drawStarLayer(stars, speed) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// PLAYER WITH REINCARNATION EFFECTS
+// PLAYER WITH ENGINE TRAIL & EFFECTS
 // ══════════════════════════════════════════════════════════════════════════════
 
 class Player {
@@ -921,29 +1027,38 @@ class Player {
     this.x = x;
     this.y = y;
     this.charData = charData;
-    this.radius = 16;
+    this.radius = 20;
     this.invincible = false;
     this.invincibleTimer = 0;
     this.lastShotTime = 0;
-    this.touchX = null;
     this.animFrame = 0;
     this.animTimer = 0;
     this.afterimageTrail = [];
+    this.engineTrail = [];
   }
 
   update(dt) {
+    const targetX = gameState.pointerX !== undefined ? gameState.pointerX : this.x;
+    const targetY = gameState.pointerY !== undefined ? Math.max(this.radius, gameState.pointerY - 60) : this.y;
+
+    this.x = lerp(this.x, targetX, 0.15);
+    this.y = lerp(this.y, targetY, 0.15);
+
+    this.x = Math.max(this.radius, Math.min(WIDTH - this.radius, this.x));
+    this.y = Math.max(this.radius, Math.min(HEIGHT - this.radius, this.y));
+
+    this.engineTrail.push({ x: this.x, y: this.y + 20, life: 0.3 });
+    this.engineTrail = this.engineTrail.filter(t => {
+      t.life -= dt;
+      return t.life > 0;
+    });
+
     if (this.invincible) {
       this.invincibleTimer -= dt;
       if (this.invincibleTimer <= 0) {
         this.invincible = false;
       }
     }
-
-    if (this.touchX !== null) {
-      this.x = this.touchX;
-    }
-    this.x = Math.max(this.radius, Math.min(WIDTH - this.radius, this.x));
-    this.y = Math.max(this.radius, Math.min(HEIGHT - this.radius, this.y));
 
     this.animTimer += dt;
     if (this.animTimer > 0.5) {
@@ -1006,10 +1121,19 @@ class Player {
   draw(ctx) {
     const rankEffects = REINCARNATION_RANKS[gameState.reincarnationRank - 1].effects;
 
+    this.engineTrail.forEach(t => {
+      ctx.globalAlpha = t.life * 0.4;
+      ctx.fillStyle = this.charData.color;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+
     if (rankEffects.includes('afterimage')) {
       this.afterimageTrail.forEach(t => {
         ctx.globalAlpha = t.life * 0.3;
-        drawPixelSprite(ctx, this.charData.sprite, this.x - 12, this.y - 12, this.charData.color, 3);
+        drawPixelSprite(ctx, this.charData.sprite, this.x - 48, this.y - 48, this.charData.colors, 3);
         ctx.globalAlpha = 1;
       });
     }
@@ -1017,7 +1141,7 @@ class Player {
     if (rankEffects.includes('aura')) {
       ctx.fillStyle = this.charData.color.replace(')', ', 0.3)').replace('rgb', 'rgba');
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius + 8, 0, Math.PI * 2);
+      ctx.arc(this.x, this.y, this.radius + 12, 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -1025,7 +1149,7 @@ class Player {
       ctx.strokeStyle = '#FFD700';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius + 12, 0, Math.PI * 2);
+      ctx.arc(this.x, this.y, this.radius + 18, 0, Math.PI * 2);
       ctx.stroke();
     }
 
@@ -1033,13 +1157,13 @@ class Player {
       ctx.strokeStyle = '#FFD700';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius + 12, 0, Math.PI * 2);
+      ctx.arc(this.x, this.y, this.radius + 18, 0, Math.PI * 2);
       ctx.stroke();
 
       ctx.strokeStyle = this.charData.color;
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius + 18, 0, Math.PI * 2);
+      ctx.arc(this.x, this.y, this.radius + 24, 0, Math.PI * 2);
       ctx.stroke();
     }
 
@@ -1047,8 +1171,8 @@ class Player {
       const count = rankEffects.includes('particles-x2') ? 2 : 1;
       for (let i = 0; i < count; i++) {
         const angle = (Date.now() / 1000 + i) % (Math.PI * 2);
-        const px = this.x + Math.cos(angle) * (this.radius + 10);
-        const py = this.y + Math.sin(angle) * (this.radius + 10);
+        const px = this.x + Math.cos(angle) * (this.radius + 14);
+        const py = this.y + Math.sin(angle) * (this.radius + 14);
         ctx.fillStyle = this.charData.color.replace(')', ', 0.6)').replace('rgb', 'rgba');
         ctx.beginPath();
         ctx.arc(px, py, 2, 0, Math.PI * 2);
@@ -1059,8 +1183,8 @@ class Player {
     if (rankEffects.includes('orbits')) {
       for (let i = 0; i < 2; i++) {
         const angle = (Date.now() / 2000 + i * Math.PI) % (Math.PI * 2);
-        const px = this.x + Math.cos(angle) * 30;
-        const py = this.y + Math.sin(angle) * 30;
+        const px = this.x + Math.cos(angle) * 35;
+        const py = this.y + Math.sin(angle) * 35;
         ctx.fillStyle = '#FFD700';
         ctx.beginPath();
         ctx.arc(px, py, 3, 0, Math.PI * 2);
@@ -1071,28 +1195,26 @@ class Player {
     if (rankEffects.includes('full-radiance')) {
       ctx.fillStyle = 'rgba(255, 215, 0, 0.1)';
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius + 25, 0, Math.PI * 2);
+      ctx.arc(this.x, this.y, this.radius + 30, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.strokeStyle = 'rgba(255, 215, 0, 0.3)';
-      ctx.lineWidth = 1;
-      for (let i = 0; i < 8; i++) {
-        const angle = (i / 8) * Math.PI * 2;
-        const px = this.x + Math.cos(angle) * 35;
-        const py = this.y + Math.sin(angle) * 35;
+      for (let i = 0; i < 12; i++) {
+        const angle = (i / 12) * Math.PI * 2;
+        const px = this.x + Math.cos(angle) * 40;
+        const py = this.y + Math.sin(angle) * 40;
         ctx.fillStyle = '#FFD700';
         ctx.beginPath();
-        ctx.arc(px, py, 2, 0, Math.PI * 2);
+        ctx.arc(px, py, 3, 0, Math.PI * 2);
         ctx.fill();
       }
     }
 
     if (this.invincible && Math.sin(Date.now() / 100) > 0) return;
 
-    drawPixelSprite(ctx, this.charData.sprite, this.x - 12, this.y - 12, this.charData.color, 3);
+    drawPixelSprite(ctx, this.charData.sprite, this.x - 48, this.y - 48, this.charData.colors, 3);
 
     ctx.strokeStyle = this.invincible ? this.charData.color : '#C9A84C';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.stroke();
@@ -1100,7 +1222,7 @@ class Player {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// BULLET WITH PIERCING
+// BULLET WITH GLOW TRAIL
 // ══════════════════════════════════════════════════════════════════════════════
 
 class Bullet {
@@ -1113,27 +1235,108 @@ class Bullet {
     this.vy = vy;
     this.radius = 4 * size;
     this.piercing = piercing;
+    this.trail = [];
   }
 
   update(dt) {
+    this.trail.push({ x: this.x, y: this.y });
+    if (this.trail.length > 3) this.trail.shift();
+
     this.x += this.vx * dt;
     this.y += this.vy * dt;
   }
 
   draw(ctx) {
+    this.trail.forEach((pos, i) => {
+      const alpha = (i + 1) / this.trail.length * 0.4;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#FFD700';
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, this.radius * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    ctx.globalAlpha = 1;
     ctx.fillStyle = '#FFD700';
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fill();
+
+    ctx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
   }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// OPTION DRONES (LV16-20)
+// KARMA ORB (Magnetic Pull)
+// ══════════════════════════════════════════════════════════════════════════════
+
+class KarmaOrb {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.radius = 6;
+    this.life = 5;
+    this.maxLife = 5;
+    this.trail = [];
+  }
+
+  update(dt) {
+    const dx = gameObjects.player.x - this.x;
+    const dy = gameObjects.player.y - this.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < 100) {
+      const speed = 200;
+      this.vx = (dx / dist) * speed;
+      this.vy = (dy / dist) * speed;
+    } else {
+      this.vx = (this.vx || 0) * 0.98;
+      this.vy = ((this.vy || 0) + 50 * dt) * 0.98;
+    }
+
+    this.x += (this.vx || 0) * dt;
+    this.y += (this.vy || 0) * dt;
+
+    this.trail.push({ x: this.x, y: this.y });
+    if (this.trail.length > 5) this.trail.shift();
+
+    this.life -= dt;
+  }
+
+  draw(ctx) {
+    this.trail.forEach((pos, i) => {
+      const alpha = (i + 1) / this.trail.length * 0.3;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#FFD700';
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, this.radius * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#FFD700';
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(255, 215, 0, 0.8)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+}
+
+function createKarmaOrb(x, y) {
+  gameObjects.karmaOrbs.push(new KarmaOrb(x, y));
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// OPTION DRONES
 // ══════════════════════════════════════════════════════════════════════════════
 
 class OptionDrone {
-  constructor(player, offset = 1) {
+  constructor(player, offset = 0) {
     this.player = player;
     this.offset = offset;
     this.x = player.x;
@@ -1142,9 +1345,9 @@ class OptionDrone {
   }
 
   update(dt) {
-    const angle = (offset * Math.PI) + (Date.now() / 3000) % (Math.PI * 2);
-    this.x = this.player.x + Math.cos(angle) * 40;
-    this.y = this.player.y + Math.sin(angle) * 40;
+    const angle = (this.offset * Math.PI) + (Date.now() / 3000) % (Math.PI * 2);
+    this.x = this.player.x + Math.cos(angle) * 50;
+    this.y = this.player.y + Math.sin(angle) * 50;
 
     this.lastShotTime += dt;
     if (this.lastShotTime > 0.2) {
@@ -1167,11 +1370,15 @@ class OptionDrone {
 
   draw(ctx) {
     ctx.fillStyle = gameState.selected.color;
-    ctx.globalAlpha = 0.6;
+    ctx.globalAlpha = 0.7;
     ctx.beginPath();
-    ctx.arc(this.x, this.y, 6, 0, Math.PI * 2);
+    ctx.arc(this.x, this.y, 8, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1;
+
+    ctx.strokeStyle = gameState.selected.color;
+    ctx.lineWidth = 1;
+    ctx.stroke();
   }
 }
 
@@ -1203,7 +1410,9 @@ class Enemy {
     if (this.hp <= 0) {
       gameState.specialGauge = Math.min(100, gameState.specialGauge + 8);
       gameState.enemiesKilled++;
-      createParticles(this.x, this.y, 8, this.color);
+      triggerScreenShake(100);
+      createParticles(this.x, this.y, 20, this.color);
+      createExplosionRing(this.x, this.y, this.color);
     }
   }
 
@@ -1215,20 +1424,13 @@ class Enemy {
   }
 }
 
-class EnemyStraight extends Enemy {
-  constructor(x, y) {
-    super(x, y, 'straight');
-    this.color = '#FF6B9D';
-  }
-}
-
+class EnemyStraight extends Enemy {}
 class EnemyZigzag extends Enemy {
   constructor(x, y) {
     super(x, y, 'zigzag');
     this.color = '#FF9E64';
     this.wobbleTimer = 0;
   }
-
   update(dt) {
     this.wobbleTimer += dt;
     this.vx = Math.sin(this.wobbleTimer * 3) * 80;
@@ -1242,7 +1444,6 @@ class EnemyRush extends Enemy {
     this.color = '#E879A0';
     this.hp = 30;
   }
-
   update(dt) {
     const dx = gameObjects.player.x - this.x;
     const dy = gameObjects.player.y - this.y;
@@ -1272,7 +1473,6 @@ class EnemySwarm extends Enemy {
     this.radius = 6;
     this.spawnTimer = 3;
   }
-
   update(dt) {
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0 && Math.random() < 0.3) {
@@ -1301,7 +1501,7 @@ function spawnRandomEnemy() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// BOSS: DARK SOVEREIGN
+// BOSS
 // ══════════════════════════════════════════════════════════════════════════════
 
 class BossDarkSovereign {
@@ -1391,7 +1591,7 @@ class BossBullet {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// PARTICLES
+// PARTICLES & EFFECTS
 // ══════════════════════════════════════════════════════════════════════════════
 
 class Particle {
@@ -1415,17 +1615,19 @@ class Particle {
 
   draw(ctx) {
     const alpha = this.life / this.maxLife;
-    ctx.fillStyle = this.color.replace(')', `, ${alpha})`).replace('rgb', 'rgba');
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = this.color;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fill();
+    ctx.globalAlpha = 1;
   }
 }
 
 function createParticles(x, y, count, color) {
   for (let i = 0; i < count; i++) {
-    const angle = (Math.PI * 2 * i) / count;
-    const speed = 100 + Math.random() * 100;
+    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5);
+    const speed = 100 + Math.random() * 150;
     gameObjects.particles.push(new Particle(
       x, y,
       Math.cos(angle) * speed,
@@ -1435,8 +1637,21 @@ function createParticles(x, y, count, color) {
   }
 }
 
+function createExplosionRing(x, y, color) {
+  for (let i = 0; i < 16; i++) {
+    const angle = (Math.PI * 2 * i) / 16;
+    gameObjects.particles.push(new Particle(
+      x, y,
+      Math.cos(angle) * 150,
+      Math.sin(angle) * 150,
+      color,
+      0.4
+    ));
+  }
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
-// COLLISION & HELPERS
+// HELPERS
 // ══════════════════════════════════════════════════════════════════════════════
 
 function checkCollision(a, b) {
@@ -1446,8 +1661,22 @@ function checkCollision(a, b) {
   return dist < a.radius + b.radius;
 }
 
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function triggerScreenShake(duration) {
+  gameState.screenShakeTime = Math.max(gameState.screenShakeTime, duration / 1000);
+}
+
+function triggerBossEntrance() {
+  gameCtx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+  gameCtx.fillRect(0, 0, WIDTH, HEIGHT);
+  triggerScreenShake(200);
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
-// KARMA TASK SYSTEM
+// KARMA TASK & SPECIAL
 // ══════════════════════════════════════════════════════════════════════════════
 
 function showKarmaTask() {
@@ -1464,14 +1693,19 @@ function completeKarmaTask() {
   document.getElementById('task-popup').classList.remove('visible');
   gameState.powerLevel = Math.min(20, gameState.powerLevel + 1);
 
+  triggerPowerPulse();
+
   if (gameState.powerLevel >= 16 && gameObjects.drones.length < 2) {
     gameObjects.drones.push(new OptionDrone(gameObjects.player, gameObjects.drones.length));
   }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// SPECIAL PURGE
-// ══════════════════════════════════════════════════════════════════════════════
+function triggerPowerPulse() {
+  gameCtx.fillStyle = 'rgba(168, 85, 247, 0.3)';
+  gameCtx.beginPath();
+  gameCtx.arc(gameObjects.player.x, gameObjects.player.y, gameObjects.player.radius + 50, 0, Math.PI * 2);
+  gameCtx.fill();
+}
 
 document.getElementById('special-btn').addEventListener('click', () => {
   if (gameState.specialGauge >= 100) {
@@ -1483,20 +1717,20 @@ function activatePurge() {
   gameState.specialGauge = 0;
 
   gameObjects.enemies.forEach(e => {
-    createParticles(e.x, e.y, 15, '#FFD700');
+    createExplosionRing(e.x, e.y, '#FFD700');
   });
   gameObjects.enemies = [];
 
   if (gameObjects.boss) {
     gameObjects.boss.takeDamage(150);
-    createParticles(gameObjects.boss.x, gameObjects.boss.y, 30, '#FFD700');
+    createParticles(gameObjects.boss.x, gameObjects.boss.y, 40, '#FFD700');
   }
 
   updateHUD();
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// HUD & UI
+// HUD & SCREENS
 // ══════════════════════════════════════════════════════════════════════════════
 
 function updateHUD() {
@@ -1556,20 +1790,36 @@ function endGame() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// TOUCH INPUT
+// INPUT HANDLING
 // ══════════════════════════════════════════════════════════════════════════════
 
 document.addEventListener('touchmove', (e) => {
-  if (gameState.screen === 'game' && gameObjects.player) {
+  if (gameState.screen === 'game') {
     const rect = gameCanvas.getBoundingClientRect();
-    gameObjects.player.touchX = e.touches[0].clientX - rect.left;
+    gameState.pointerX = e.touches[0].clientX - rect.left;
+    gameState.pointerY = e.touches[0].clientY - rect.top;
   }
 }, { passive: false });
 
 document.addEventListener('touchend', () => {
-  if (gameObjects.player) {
-    gameObjects.player.touchX = null;
+  gameState.pointerX = undefined;
+  gameState.pointerY = undefined;
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (gameState.screen === 'game') {
+    const rect = gameCanvas.getBoundingClientRect();
+    gameState.pointerX = e.clientX - rect.left;
+    gameState.pointerY = e.clientY - rect.top;
   }
+});
+
+document.addEventListener('mousedown', () => {
+  gameState.isMouseDown = true;
+});
+
+document.addEventListener('mouseup', () => {
+  gameState.isMouseDown = false;
 });
 
 // ══════════════════════════════════════════════════════════════════════════════
