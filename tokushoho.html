@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>特定商取引法に基づく表記 — KARMA STELLA</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Noto+Serif+JP:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --void: #04040F;
+      --gold: #C9A84C;
+      --silver: #C8C8E8;
+      --text-dim: #8888AA;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: var(--void);
+      color: var(--silver);
+      font-family: 'Noto Serif JP', serif;
+      padding: 20px;
+      line-height: 1.8;
+    }
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 24px;
+      color: var(--gold);
+      letter-spacing: 0.1em;
+      margin-bottom: 24px;
+      border-bottom: 1px solid rgba(201, 168, 76, 0.2);
+      padding-bottom: 16px;
+    }
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 24px;
+    }
+    .info-table td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(201, 168, 76, 0.2);
+      font-size: 14px;
+    }
+    .info-table .label {
+      background: rgba(201, 168, 76, 0.08);
+      color: var(--gold);
+      font-weight: 500;
+      width: 120px;
+      white-space: nowrap;
+    }
+    .info-table .value {
+      color: var(--silver);
+    }
+    .placeholder {
+      background: rgba(168, 85, 247, 0.1);
+      border: 1px dashed rgba(168, 85, 247, 0.3);
+      padding: 8px 12px;
+      border-radius: 4px;
+      color: rgba(168, 85, 247, 0.7);
+      font-style: italic;
+      font-size: 13px;
+    }
+    .back-link {
+      display: inline-block;
+      margin-top: 32px;
+      padding: 10px 16px;
+      background: rgba(201, 168, 76, 0.1);
+      border: 1px solid rgba(201, 168, 76, 0.3);
+      border-radius: 6px;
+      color: var(--gold);
+      text-decoration: none;
+      font-size: 13px;
+      transition: all 0.3s ease;
+    }
+    .back-link:hover {
+      background: rgba(201, 168, 76, 0.2);
+      border-color: rgba(201, 168, 76, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>特定商取引法に基づく表記</h1>
+
+    <table class="info-table">
+      <tr>
+        <td class="label">販売者名</td>
+        <td class="value"><span class="placeholder">[TERRA] または販売者名を入力してください</span></td>
+      </tr>
+      <tr>
+        <td class="label">所在地</td>
+        <td class="value"><span class="placeholder">[住所を入力してください]</span></td>
+      </tr>
+      <tr>
+        <td class="label">メールアドレス</td>
+        <td class="value"><span class="placeholder">karmastella.app@gmail.com</span></td>
+      </tr>
+      <tr>
+        <td class="label">商品名</td>
+        <td class="value">詳細鑑定レポート</td>
+      </tr>
+      <tr>
+        <td class="label">販売価格</td>
+        <td class="value">¥980（税込）</td>
+      </tr>
+      <tr>
+        <td class="label">支払方法</td>
+        <td class="value">Stripe、BASE、その他指定方法</td>
+      </tr>
+      <tr>
+        <td class="label">商品代金以外の必要費用</td>
+        <td class="value">なし</td>
+      </tr>
+      <tr>
+        <td class="label">納期</td>
+        <td class="value">購入後24時間以内にメール送付</td>
+      </tr>
+      <tr>
+        <td class="label">返品・キャンセル</td>
+        <td class="value">デジタル商品のため返品不可</td>
+      </tr>
+      <tr>
+        <td class="label">商品の引き渡し時期</td>
+        <td class="value">ご注文後、決済確認後、24時間以内にご指定のメールアドレスへ配信いたします</td>
+      </tr>
+    </table>
+
+    <a href="index.html" class="back-link">← 戻る</a>
+  </div>
+</body>
+</html>
