@@ -376,21 +376,21 @@ addEventListener('keydown',e=>{KEY[e.key]=true;if(e.key===' ')tryPurge()});
 addEventListener('keyup',e=>{KEY[e.key]=false});
 
 /* ══════════ キャラクター ══════════ */
-const IMG_BASE='images/00_image/';
-const RAW_BASE='https://raw.githubusercontent.com/kiyo819-coder/KarmaStella/main/images/00_image/';
+const IMG_BASE='images/';
+const RAW_BASE='https://raw.githubusercontent.com/kiyo819-coder/KarmaStella/main/images/';
 const CHARS=[
-  {id:'aqua',name:'AQUA',file:'AQUA.png',color:'#5B8DEF',sc:'#9FC4FF'},
-  {id:'ignis',name:'IGNIS',file:'IGNIS.png',color:'#E05555',sc:'#FF9B8A'},
-  {id:'vento',name:'VENTO',file:'VENTO.png',color:'#6DB56D',sc:'#A5E8A5'},
-  {id:'terra',name:'TERRA',file:'TERRA.png',color:'#B8956A',sc:'#E3C9A2'},
-  {id:'sol',name:'SOL',file:'SOL.png',color:'#FFD700',sc:'#FFF0A0'},
-  {id:'anima',name:'ANIMA',file:'ANIMA.png',color:'#C8C8E8',sc:'#F0F0FF'},
-  {id:'armonia',name:'ARMONIA',file:'ARMONIA.png',color:'#E879A0',sc:'#FFB9D4'},
-  {id:'ombra',name:'OMBRA',file:'OMBRA.png',color:'#9966CC',sc:'#C9A0F0'},
-  {id:'saeta',name:'SAETA',file:'SAETA.png',color:'#4ECDC4',sc:'#96EFE9'},
-  {id:'aeter',name:'AETHER',file:'AETER.png',color:'#87CEEB',sc:'#C8ECFA'},
-  {id:'kronos',name:'KRONOS',file:'KRONOS.png',color:'#9370DB',sc:'#C3AAF0'},
-  {id:'luna',name:'LUNA',file:'LUNA.png',color:'#F0E6FF',sc:'#FFFFFF'},
+  {id:'aqua',name:'AQUA',file:'aqua.png',color:'#5B8DEF',sc:'#9FC4FF'},
+  {id:'ignis',name:'IGNIS',file:'ignis.png',color:'#E05555',sc:'#FF9B8A'},
+  {id:'vento',name:'VENTO',file:'vento.png',color:'#6DB56D',sc:'#A5E8A5'},
+  {id:'terra',name:'TERRA',file:'terra.png',color:'#B8956A',sc:'#E3C9A2'},
+  {id:'sol',name:'SOL',file:'sol.png',color:'#FFD700',sc:'#FFF0A0'},
+  {id:'anima',name:'ANIMA',file:'anima.png',color:'#C8C8E8',sc:'#F0F0FF'},
+  {id:'armonia',name:'ARMONIA',file:'armonia.png',color:'#E879A0',sc:'#FFB9D4'},
+  {id:'ombra',name:'OMBRA',file:'ombra.png',color:'#9966CC',sc:'#C9A0F0'},
+  {id:'saeta',name:'SAETA',file:'saeta.png',color:'#4ECDC4',sc:'#96EFE9'},
+  {id:'aeter',name:'AETHER',file:'aether.png',color:'#87CEEB',sc:'#C8ECFA'},
+  {id:'kronos',name:'KRONOS',file:'kronos.png',color:'#9370DB',sc:'#C3AAF0'},
+  {id:'luna',name:'LUNA',file:'luna.png',color:'#F0E6FF',sc:'#FFFFFF'},
 ];
 const IMGS={},SHADOW_IMGS={};
 CHARS.forEach(c=>{
