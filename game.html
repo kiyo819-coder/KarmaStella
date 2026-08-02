@@ -156,7 +156,7 @@ canvas{position:absolute;top:0;left:0;width:100%;height:100%}
 
   <div id="hud" class="ov">
     <div class="top">
-      <div class="hud-block"><div class="hud-label">KARMA</div><div class="hud-val" id="h-karma">0</div></div>
+      <div class="hud-block"><div class="hud-label">KARMA</div><div class="hud-val" id="h-karma">0</div><div class="hud-label" style="margin-top:2px">SCORE <span id="h-score" style="color:#C9A84C">0</span></div></div>
       <div id="hud-dim">第一次元<br><span style="font-size:8px;letter-spacing:.4em;color:#8888AA">欲望の海</span></div>
       <div class="hud-block" style="text-align:right"><div class="hud-label">SOUL</div><div class="hud-val" id="h-hp">♥♥♥</div></div>
     </div>
@@ -214,6 +214,7 @@ canvas{position:absolute;top:0;left:0;width:100%;height:100%}
     <div class="r-poem" id="r-poem">魂は星海に還り、新たな生を得る</div>
     <div class="r-new" id="r-new">✦ NEW RECORD ✦</div>
     <div class="r-card">
+      <div class="r-row"><span class="lab">SCORE</span><span class="val" id="r-score">0</span></div>
       <div class="r-row"><span class="lab">獲得カルマ</span><span class="val" id="r-karma">0</span></div>
       <div class="r-row"><span class="lab">最大コンボ</span><span class="val" id="r-combo">0</span></div>
       <div class="r-row"><span class="lab">到達次元</span><span class="val" id="r-dim">第一次元</span></div>
@@ -423,7 +424,7 @@ function rankOf(s){let r=1;for(let i=0;i<RANKS.length;i++)if(s>=RANKS[i])r=i+1;r
 const S={
   screen:'title',
   char:CHARS[0],
-  karma:0,combo:0,comboT:0,maxCombo:0,
+  karma:0,combo:0,comboT:0,maxCombo:0,score:0,
   power:1,gauge:0,purgeReady:false,
   hp:3,shield:0,
   shukugo:parseInt(store('ks_shukugo')||'0',10)||0,
@@ -465,16 +466,31 @@ function playerFireInterval(){
   const base=.20, bonus=clamp(S.power-5,0,5)*.022;
   return clamp(base-bonus,.085,.3);
 }
+let shotCount=0;
 function playerShoot(){
   const p=O.player,c=S.char;
+  shotCount++;
   const n=clamp(S.power,1,5);
-  const pierce=S.power>=11?clamp(Math.floor((S.power-10)/2),1,3):0;
-  const sz=S.power>=11?5.2:4;
   const spd=640+S.power*14;
+  const mid=(n-1)/2;
   for(let i=0;i<n;i++){
-    const off=(i-(n-1)/2)*.13;
-    O.pb.push({x:p.x+(i-(n-1)/2)*7,y:p.y-16,vx:Math.sin(off)*spd*.4,vy:-spd,
-      r:sz,col:c.sc,pierce,trail:[]});
+    const off=(i-mid)*.13;
+    if(S.power>=11&&i===Math.floor(mid)){
+      // 貫光——中央弾は迷いを貫くビーム
+      O.pb.push({x:p.x,y:p.y-20,vx:0,vy:-980,
+        r:5,col:c.sc,pierce:6,beam:true,trail:[]});
+      continue;
+    }
+    O.pb.push({x:p.x+(i-mid)*7,y:p.y-16,vx:Math.sin(off)*spd*.4,vy:-spd,
+      r:4,col:c.sc,pierce:0,trail:[]});
+  }
+  // 追念弾——LV5+、3斉射ごとに想いが敵を追う
+  if(S.power>=5&&shotCount%3===0){
+    for(let s=-1;s<=1;s+=2){
+      O.pb.push({x:p.x+s*14,y:p.y-6,vx:s*180,vy:-260,
+        r:4.2,col:'#FFD86B',pierce:0,homing:true,turn:7,spdH:470,trail:[]});
+      if(S.power<8)break;
+    }
   }
   O.drones.forEach(d=>{
     O.pb.push({x:d.x,y:d.y-8,vx:0,vy:-560,r:3.4,col:c.sc,pierce:0,trail:[]});
@@ -539,8 +555,10 @@ function updateOrbs(dt){
     if(p.alive&&d2<(p.r+o.r+6)*(p.r+o.r+6)){
       if(o.type===0){
         S.karma++;S.combo++;S.comboT=2;S.maxCombo=Math.max(S.maxCombo,S.combo);
+        const mult=Math.min(S.combo,10);
+        S.score+=10*mult;
         AU.pickup(S.combo-1);
-        ftext(o.x,o.y-6,'+1','#FFD86B',10);
+        ftext(o.x,o.y-6,mult>1?'+'+(10*mult):'+10','#FFD86B',10);
         if(S.combo>=5)$('hud-combo').style.opacity=1;
         $('h-combo').textContent=S.combo;
       }else if(o.type===1){
@@ -646,6 +664,7 @@ function killEnemy(e){
   flash('255,255,255',.10);
   burst(e.x,e.y,e.col2,big?22:12,big?200:140);
   ring(e.x,e.y,e.col2,big?70:44,big?3.5:2.5);
+  S.score+=big?50:20;
   const drops=e.kind==='don'?2+e.eat:e.kind==='man'?3:e.kind==='gi'?1:2;
   for(let i=0;i<drops;i++)dropOrb(e.x+(Math.random()-.5)*18,e.y+(Math.random()-.5)*12);
   if(!S.purging)S.gauge=clamp(S.gauge+(big?7:4),0,100);
@@ -657,7 +676,20 @@ function updateBullets(dt){
   const p=O.player;
   // 自弾
   O.pb=O.pb.filter(b=>{
-    b.trail.push({x:b.x,y:b.y});if(b.trail.length>3)b.trail.shift();
+    if(b.homing){
+      let tgt=null,best=1e9;
+      O.enemies.forEach(e=>{if(!e.dead){const d=dist2(b.x,b.y,e.x,e.y);if(d<best){best=d;tgt=e}}});
+      if(O.boss&&!O.boss.warm&&!O.boss.dying){const d=dist2(b.x,b.y,O.boss.x,O.boss.y);if(d<best){best=d;tgt=O.boss}}
+      if(tgt){
+        const cur=Math.atan2(b.vy,b.vx);
+        const want=Math.atan2(tgt.y-b.y,tgt.x-b.x);
+        let diff=want-cur;
+        while(diff>Math.PI)diff-=TAU;while(diff<-Math.PI)diff+=TAU;
+        const a=cur+clamp(diff,-b.turn*dt,b.turn*dt);
+        b.vx=Math.cos(a)*b.spdH;b.vy=Math.sin(a)*b.spdH;
+      }
+    }
+    b.trail.push({x:b.x,y:b.y});if(b.trail.length>(b.homing?7:3))b.trail.shift();
     b.x+=b.vx*dt;b.y+=b.vy*dt;
     if(b.y<-20||b.x<-20||b.x>W+20)return false;
     // vs 敵
@@ -756,7 +788,10 @@ $('task-go').addEventListener('click',()=>{
   AU.powerup();
   pulseFx(O.player.x,O.player.y,S.char.color);
   ftext(O.player.x,O.player.y-34,'魂が磨かれた — POWER LV.'+S.power,'#FFE9A0',12);
-  if(S.power===16)ftext(O.player.x,O.player.y-52,'分魂が寄り添う','#C8C8E8',11);
+  if(S.power===5)ftext(O.player.x,O.player.y-52,'追念弾 解放——想いは敵を追う','#FFD86B',11);
+  if(S.power===11)ftext(O.player.x,O.player.y-52,'貫光 解放——迷いを貫く','#E8F0FF',11);
+  if(S.power===16)ftext(O.player.x,O.player.y-52,'エージェント覚醒——魂の使徒','#C8C8E8',11);
+  if(S.power===20)ftext(O.player.x,O.player.y-52,'エージェント×2——完全なる随伴','#FFE9A0',11);
   updateHUD();
 });
 
@@ -1098,14 +1133,25 @@ function drawPlayer(){
   // 無敵点滅
   if(p.inv>0&&Math.floor(p.inv*14)%2===0)return;
   drawCharSprite(p.x,p.y,52,false);
-  // 分魂
+  // エージェント（魂の使徒）
   O.drones.forEach(d=>{
     g.save();g.globalCompositeOperation='lighter';
-    const gr=g.createRadialGradient(d.x,d.y,0,d.x,d.y,12);
+    const gr=g.createRadialGradient(d.x,d.y,0,d.x,d.y,13);
     gr.addColorStop(0,c.sc);gr.addColorStop(1,'transparent');
-    g.fillStyle=gr;g.beginPath();g.arc(d.x,d.y,12,0,TAU);g.fill();
+    g.fillStyle=gr;g.beginPath();g.arc(d.x,d.y,13,0,TAU);g.fill();
     g.restore();
-    g.fillStyle=c.color;g.beginPath();g.arc(d.x,d.y,4.5,0,TAU);g.fill();
+    const t=Date.now()/1000;
+    const flap=Math.sin(t*10+d.ang)*2;
+    g.strokeStyle=c.sc;g.lineWidth=1.4;
+    g.beginPath();
+    g.moveTo(d.x-4,d.y);g.quadraticCurveTo(d.x-10,d.y-5+flap,d.x-13,d.y+1);
+    g.moveTo(d.x+4,d.y);g.quadraticCurveTo(d.x+10,d.y-5+flap,d.x+13,d.y+1);
+    g.stroke();
+    g.fillStyle=c.color;
+    g.beginPath();
+    g.moveTo(d.x,d.y-5.5);g.lineTo(d.x+4,d.y);g.lineTo(d.x,d.y+5.5);g.lineTo(d.x-4,d.y);
+    g.closePath();g.fill();
+    g.fillStyle='#FFF';g.beginPath();g.arc(d.x,d.y,1.4,0,TAU);g.fill();
   });
 }
 function drawCharSprite(x,y,size,shadow){
@@ -1232,10 +1278,23 @@ function drawAll(){
     g.restore();
     g.fillStyle='#FFF';g.beginPath();g.arc(b.x,b.y,b.r*.5,0,TAU);g.fill();
   });
-  // 自弾（軌跡グロー）
+  // 自弾（軌跡グロー／貫光／追念弾）
   O.pb.forEach(b=>{
+    if(b.beam){
+      const L=46;
+      g.save();g.globalCompositeOperation='lighter';
+      const lg=g.createLinearGradient(b.x,b.y+L*.5,b.x,b.y-L);
+      lg.addColorStop(0,'transparent');lg.addColorStop(.55,b.col);lg.addColorStop(1,'#FFFFFF');
+      g.fillStyle=lg;
+      g.fillRect(b.x-3.2,b.y-L,6.4,L*1.5);
+      const gr=g.createRadialGradient(b.x,b.y-L*.4,0,b.x,b.y-L*.4,14);
+      gr.addColorStop(0,'rgba(255,255,255,.8)');gr.addColorStop(1,'transparent');
+      g.fillStyle=gr;g.beginPath();g.arc(b.x,b.y-L*.4,14,0,TAU);g.fill();
+      g.restore();
+      return;
+    }
     b.trail.forEach((t,i)=>{
-      g.globalAlpha=(i+1)/b.trail.length*.35;
+      g.globalAlpha=(i+1)/b.trail.length*(b.homing?.5:.35);
       g.fillStyle=b.col;g.beginPath();g.arc(t.x,t.y,b.r*.7,0,TAU);g.fill();
     });
     g.globalAlpha=1;
@@ -1295,6 +1354,7 @@ function drawAll(){
 /* ══════════ HUD・画面遷移・ループ ══════════ */
 function updateHUD(){
   $('h-karma').textContent=S.karma;
+  $('h-score').textContent=S.score;
   $('h-hp').textContent='♥'.repeat(Math.max(0,S.hp))+'♡'.repeat(Math.max(0,3-S.hp));
   $('pw-lv').textContent='LV.'+S.power;
   $('pw-fill').style.width=((S.power-1)/19*100)+'%';
@@ -1343,7 +1403,7 @@ function loop(now){
 
 /* ══════════ 開始・死・終了 ══════════ */
 function startGame(){
-  S.karma=0;S.combo=0;S.maxCombo=0;S.power=1;S.gauge=0;S.purgeReady=false;
+  S.karma=0;S.combo=0;S.maxCombo=0;S.score=0;S.power=1;S.gauge=0;S.purgeReady=false;
   S.hp=3;S.shield=0;S.nextTask=40;S.taskOpen=false;
   S.timeScale=1;S.freeze=0;S.shake=0;S.flash=0;S.ended=false;S.shadowPhase=0;
   O.pb=[];O.eb=[];O.enemies=[];O.orbs=[];O.parts=[];O.fx=[];O.texts=[];O.drones=[];O.boss=null;
@@ -1371,12 +1431,13 @@ function finish(cleared){
   S.shukugo+=gained;store('ks_shukugo',String(S.shukugo));
   const newRank=rankOf(S.shukugo);
   const rankedUp=newRank>S.rank;S.rank=newRank;
-  const isNew=S.karma>S.hiscore;
-  if(isNew){S.hiscore=S.karma;store('ks_hiscore',String(S.hiscore))}
+  const isNew=S.score>S.hiscore;
+  if(isNew){S.hiscore=S.score;store('ks_hiscore',String(S.hiscore))}
   $('r-title').textContent=cleared?'原点回帰':'輪廻転生';
   $('r-poem').innerHTML=cleared
     ?'すべての毒を認め、赦し、抱きしめた。<br>魂は光となって、始まりへ還る。'
     :['魂は星海に還り、新たな生を得る','迷いもまた、旅の一部','次の生で、続きを歩もう'][Math.floor(Math.random()*3)];
+  $('r-score').textContent=S.score;
   $('r-karma').textContent=S.karma;
   $('r-combo').textContent='×'+S.maxCombo;
   $('r-dim').textContent=cleared?'超越':DIMS[S.dim].name;
