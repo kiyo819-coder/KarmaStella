@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- マスク用：角丸なし・図柄を中央80%（セーフゾーン）に収める -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="#0D1B4E"/>
+      <stop offset="60%" stop-color="#0A0A2A"/>
+      <stop offset="100%" stop-color="#04040F"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E8C97A"/>
+      <stop offset="100%" stop-color="#C9A84C"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="120" fill="none" stroke="#7B2FBE" stroke-width="4" opacity="0.7"/>
+  <path d="M256 156 L278 234 L356 256 L278 278 L256 356 L234 278 L156 256 L234 234 Z" fill="url(#gold)"/>
+  <circle cx="256" cy="256" r="11" fill="#F0E6FF"/>
+</svg>

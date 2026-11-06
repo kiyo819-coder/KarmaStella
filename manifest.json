@@ -1,0 +1,26 @@
+{
+  "name": "KARMA STELLA — 星の鑑定",
+  "short_name": "KARMA STELLA",
+  "description": "九星気学 × 四柱推命 × 星座で、自分を知るためのツール",
+  "lang": "ja",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#04040F",
+  "theme_color": "#0A0A2A",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

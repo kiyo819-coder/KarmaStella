@@ -66,3 +66,10 @@
 - 「波動」「引き寄せ」の多用
 - 断定口調（「あなたはこういう人です」）
 - AQUAチェック前にIGNISへ渡すこと
+
+## 夜間開発（2026-11-07〜）
+- 毎朝5時に affiliate-auto/scripts/karma_nightly.sh が DEV_TASKS.md の上から1タスクずつ進める
+- 作業は auto-dev ブランチのみ。main（=本番 karmastella.jp）への反映は雄也のOK後
+- 決済は Gumroad（Stripe は日本で占いが禁止業種）。ポイント・コインは作らない
+- 有料の詳細鑑定文は公開ファイル（soul_descriptions.js 等）に入れない
+- 芸能人など実在の人物の鑑定はしない（/post の芸能人運用は停止）
