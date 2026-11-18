@@ -1,2 +1,5 @@
 .claude/
 tools/
+
+# 有料テキスト本体は公開しない
+api/premium_texts.js

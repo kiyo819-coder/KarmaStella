@@ -20,10 +20,10 @@
 - [ ] 有料テキストは公開リポジトリに置かない（Vercel関数側に保持）
 
 ## P2：Gumroadライセンス検証API
-- [ ] api/verify-license.js（Vercel）：POST https://api.gumroad.com/v2/licenses/verify に product_id + license_key を送り、有効なら PREMIUM_TEXTS を返す
-- [ ] report.html：?license_key= を読む方式に変更（Stripeセッション検証は廃止）
-- [ ] PREMIUM_TEXTS の構造は既存スケルトンのまま流用
-- [ ] デプロイは P1 完了まで行わない
+- [x] api/verify-license.js（2026-11-19 KURO実装・mainに配置）：Gumroad verify API照合、refunded/disputed検知、typeごとに該当テキストのみ返却、CORS制限
+- [x] report.html（2026-11-19 KURO実装・mainに配置）：ライセンスキー＋生年月日→本命星×星座を算出→API照合→5章レポート表示＋印刷保存。エンジンはindex.htmlの検証済み関数を転載（式の変更なし）
+- [x] 有料テキスト分離：api/premium_texts.js はgitignore（example構造ファイルのみ公開）
+- [ ] デプロイ（P1完了後）：Vercelへapi/をアップ、環境変数 GUMROAD_PRODUCT_ID 設定、report.html の VERIFY_ENDPOINT_PLACEHOLDER を実URLに差し替え
 
 ## P3：導線切替
 - [ ] index.html の購入ボタン2箇所（現BASE）を Gumroad商品URLに差し替え
